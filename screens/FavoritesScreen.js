@@ -1,5 +1,6 @@
+import { useFocusEffect } from "@react-navigation/native";
+import { useCallback, useEffect, useState } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { useEffect, useState } from "react";
 import { View, Text, Alert } from "react-native";
 import MovieList from "../components/MovieList";
 import { loadFromStorage } from "../utils/storage";
@@ -9,14 +10,17 @@ export default function FavoritesScreen() {
   const [favorites, setFavorites] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const load = async () => {
-      const data = await loadFromStorage("favorites");
-      setFavorites(data);
-      setLoading(false);
-    };
-    load();
-  }, []);
+  const loadFavorites = async () => {
+    const stored = await AsyncStorage.getItem("favorites");
+    setFavorites(stored ? JSON.parse(stored) : []);
+    setLoading(false);
+  };
+
+  useFocusEffect(
+    useCallback(() => {
+      loadFavorites();
+    }, [])
+  );
 
   const removeFavourite = async (imdbID) => {
     try {
