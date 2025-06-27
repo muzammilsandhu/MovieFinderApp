@@ -1,20 +1,58 @@
 import { useState, useEffect, useRef } from "react";
 import { View } from "react-native";
+import Toast from "react-native-root-toast";
 import SearchBar from "../components/SearcBar";
 import MovieList from "../components/MovieList";
 import RandomKeywordLoader from "../components/RandomKeywordLoader";
 import { fetchMovies } from "../services/movieApi";
+import { saveToStorage, loadFromStorage } from "../utils/storage";
 import styles from "../styles/globalStyles";
 
 export default function HomeScreen() {
   const pageRef = useRef(1);
+  const debounceTimeout = useRef(null);
+
   const [movies, setMovies] = useState([]);
   const [query, setQuery] = useState("");
   const [page, setPage] = useState(1);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [hasMore, setHasMore] = useState(true);
-  const debounceTimeout = useRef(null);
+  const [favorites, setFavorites] = useState([]);
+  const [watchLater, setWatchLater] = useState([]);
+
+  useEffect(() => {
+    const loadFavorites = async () => {
+      const stored = await loadFromStorage("favorites");
+      setFavorites(stored);
+    };
+    loadFavorites();
+  }, []);
+
+  const handleAddFavorite = async (movie) => {
+    if (!favorites.find((fav) => fav.imdbID === movie.imdbID)) {
+      const updated = [...favorites, movie];
+      setFavorites(updated);
+      await saveToStorage("favorites", updated);
+
+      Toast.show(`${movie.Title} added to favorites`, {
+        duration: Toast.durations.SHORT,
+        position: Toast.positions.BOTTOM,
+      });
+    } else {
+      Toast.show(`${movie.Title} is already in favorites`, {
+        duration: Toast.durations.SHORT,
+        position: Toast.positions.BOTTOM,
+      });
+    }
+  };
+
+  const handleAddWatchLater = (movie) => {
+    if (!watchLater.find((m) => m.imdbID === movie.imdbID)) {
+      setWatchLater([...watchLater, movie]);
+      console.log("Added to watch later:", movie.Title);
+    }
+  };
 
   const removeDuplicates = (movieArray) => {
     const seen = new Set();
@@ -92,6 +130,8 @@ export default function HomeScreen() {
         loading={loading}
         error={error}
         onEndReached={handleLoadMore}
+        onFavorite={handleAddFavorite}
+        onWatchLater={handleAddWatchLater}
       />
     </View>
   );

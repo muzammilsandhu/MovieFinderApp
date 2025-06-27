@@ -2,14 +2,29 @@ import { FlatList, Text, ActivityIndicator } from "react-native";
 import MovieCard from "./MovieCard";
 import styles from "../styles/globalStyles";
 
-export default function MovieList({ movies, loading, error, onEndReached }) {
+export default function MovieList({
+  movies,
+  loading,
+  error,
+  onEndReached,
+  onFavorite,
+  onWatchLater,
+  onRemove,
+}) {
   return (
     <>
       {error ? <Text style={styles.error}>{error}</Text> : null}
       <FlatList
         data={movies}
         keyExtractor={(movie) => movie.imdbID}
-        renderItem={({ item }) => <MovieCard movie={item} />}
+        renderItem={({ item }) => (
+          <MovieCard
+            movie={item}
+            onFavorite={onFavorite}
+            onWatchLater={onWatchLater}
+            onRemove={onRemove}
+          />
+        )}
         onEndReached={onEndReached}
         onEndReachedThreshold={0.2}
         ListFooterComponent={

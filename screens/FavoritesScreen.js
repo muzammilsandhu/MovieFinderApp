@@ -1,25 +1,22 @@
-import { useEffect, useState } from "react";
-import { View, Text, FlatList, Button } from "react-native";
-import styles from "../styles/globalStyles";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useEffect, useState } from "react";
+import { View, Text, Alert } from "react-native";
+import MovieList from "../components/MovieList";
+import { loadFromStorage } from "../utils/storage";
+import styles from "../styles/globalStyles";
 
 export default function FavoritesScreen() {
   const [favorites, setFavorites] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    loadFavorites();
+    const load = async () => {
+      const data = await loadFromStorage("favorites");
+      setFavorites(data);
+      setLoading(false);
+    };
+    load();
   }, []);
-
-  const loadFavorites = async () => {
-    try {
-      const stored = await AsyncStorage.getItem("favorites");
-      if (stored !== null) {
-        setFavorites(JSON.parse(stored));
-      }
-    } catch (error) {
-      console.log("Error loading favorites: ", error);
-    }
-  };
 
   const removeFavourite = async (imdbID) => {
     try {
@@ -49,20 +46,14 @@ export default function FavoritesScreen() {
   return (
     <View style={styles.favoritesContainer}>
       <Text style={styles.favoritesTitle}>Your Favorite Movies</Text>
-      <FlatList
-        data={favorites}
-        keyExtractor={(item) => item.imdbID}
-        renderItem={({ item }) => (
-          <View style={styles.favouritesCard}>
-            <Text style={styles.movieTitle}>{item.title}</Text>
-            <Button
-              title="Remove"
-              color="red"
-              onPress={() => confirmRemove(item.imdbID)}
-            />
-          </View>
-        )}
-        ListEmptyComponent={<Text>No favorites saved yet.</Text>}
+      <MovieList
+        movies={favorites}
+        loading={loading}
+        error={favorites.length === 0 ? "No favorites yet." : ""}
+        onEndReached={() => {}}
+        onFavorite={() => {}}
+        onWatchLater={() => {}}
+        onRemove={confirmRemove}
       />
     </View>
   );
