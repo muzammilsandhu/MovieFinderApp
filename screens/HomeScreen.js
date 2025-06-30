@@ -1,22 +1,22 @@
 import { useState, useEffect, useRef } from "react";
-import { View } from "react-native";
+import { View, Text, TouchableOpacity, ScrollView } from "react-native";
 import Toast from "react-native-root-toast";
 import MovieList from "../components/MovieList";
 import { fetchMovieDetails, fetchMovies } from "../services/movieApi";
 import { saveToStorage, loadFromStorage } from "../utils/storage";
 import styles from "../styles/globalStyles";
 
-const keywords = [
-  "action",
-  "comedy",
-  "romance",
-  "thriller",
-  "war",
-  "space",
-  "spy",
-  "drama",
-  "crime",
-  "fantasy",
+const genres = [
+  "All",
+  "Action",
+  "Comedy",
+  "Romance",
+  "Thriller",
+  "Crime",
+  "Sci-Fi",
+  "Horror",
+  "Drama",
+  "Fantasy",
 ];
 
 export default function HomeScreen() {
@@ -28,6 +28,7 @@ export default function HomeScreen() {
   const [favorites, setFavorites] = useState([]);
   const [watchLater, setWatchLater] = useState([]);
   const [randomQuery, setRandomQuery] = useState("");
+  const [selectedGenre, setSelectedGenre] = useState("All");
 
   useEffect(() => {
     const loadInitial = async () => {
@@ -44,8 +45,8 @@ export default function HomeScreen() {
   }, []);
 
   const getRandomKeyword = () => {
-    const index = Math.floor(Math.random() * keywords.length);
-    return keywords[index];
+    const index = Math.floor(Math.random() * genres.length);
+    return genres[index].toLowerCase();
   };
 
   const handleSearch = async (query, newPage = 1) => {
@@ -121,16 +122,40 @@ export default function HomeScreen() {
     }
   };
 
+  const filteredMovies =
+    selectedGenre === "All"
+      ? movies
+      : movies.filter((m) =>
+          (m.Genre || "").toLowerCase().includes(selectedGenre.toLowerCase())
+        );
+
   return (
     <View style={styles.homeContainer}>
-      {/* <SearchBar
-        query={query}
-        setQuery={setQuery}
-        onSearchButtonPress={(text) => handleSearch(text, 1)}
-        loading={{}}
-      /> */}
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        style={{ marginBottom: 10, flexGrow: "unset", flexShrink: "unset" }}
+      >
+        {genres.map((genre) => (
+          <TouchableOpacity
+            key={genre}
+            onPress={() => setSelectedGenre(genre)}
+            style={{
+              backgroundColor: selectedGenre === genre ? "#cc0000" : "#eee",
+              paddingVertical: 6,
+              paddingHorizontal: 12,
+              borderRadius: 20,
+              marginRight: 10,
+            }}
+          >
+            <Text style={{ color: selectedGenre === genre ? "#fff" : "#333" }}>
+              {genre}
+            </Text>
+          </TouchableOpacity>
+        ))}
+      </ScrollView>
       <MovieList
-        movies={movies}
+        movies={filteredMovies}
         favorites={favorites}
         watchLater={watchLater}
         loading={loading}
