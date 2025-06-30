@@ -1,4 +1,4 @@
-import { NavigationContainer } from "@react-navigation/native";
+import { NavigationContainer, DarkTheme } from "@react-navigation/native";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import HomeScreen from "../screens/HomeScreen";
 import FavoritesScreen from "../screens/FavoritesScreen";
@@ -9,8 +9,19 @@ const Tab = createBottomTabNavigator();
 
 export default function AppNavigator() {
   return (
-    <NavigationContainer>
-      <Tab.Navigator screenOptions={{ headerShown: true }}>
+    <NavigationContainer theme={DarkTheme}>
+      <Tab.Navigator
+        screenOptions={{
+          headerShown: true,
+          tabBarActiveTintColor: "#cc0000",
+          tabBarInactiveTintColor: "#b3b3b3",
+          tabBarStyle: {
+            backgroundColor: "#141414",
+            borderTopColor: "#333",
+          },
+          tabBarPressColor: "transparent",
+        }}
+      >
         <Tab.Screen
           name="Home"
           component={HomeScreen}

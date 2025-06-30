@@ -1,6 +1,6 @@
 import { View, Text, Image, TouchableOpacity } from "react-native";
-import styles from "../styles/globalStyles";
 import { Ionicons } from "@expo/vector-icons";
+import styles from "../styles/globalStyles";
 
 export default function MovieCard({
   movie,
@@ -22,7 +22,10 @@ export default function MovieCard({
       <View style={styles.info}>
         <View>
           <Text style={styles.title}>{movie.Title}</Text>
-          <Text>{movie.Year}</Text>
+          <Text style={styles.year}>{movie.Year}</Text>
+          <Text numberOfLines={4} style={styles.plot}>
+            {movie.Plot || "No description available."}
+          </Text>
         </View>
         <View style={styles.actions}>
           {onFavorite && (
