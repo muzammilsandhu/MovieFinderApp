@@ -6,6 +6,19 @@ import { fetchMovieDetails, fetchMovies } from "../services/movieApi";
 import { saveToStorage, loadFromStorage } from "../utils/storage";
 import styles from "../styles/globalStyles";
 
+const keywords = [
+  "action",
+  "comedy",
+  "romance",
+  "thriller",
+  "war",
+  "space",
+  "spy",
+  "drama",
+  "crime",
+  "fantasy",
+];
+
 export default function HomeScreen() {
   const pageRef = useRef(1);
 
@@ -15,8 +28,7 @@ export default function HomeScreen() {
   const [hasMore, setHasMore] = useState(true);
   const [favorites, setFavorites] = useState([]);
   const [watchLater, setWatchLater] = useState([]);
-
-  const DEFAULT_QUERY = "avengers";
+  const [randomQuery, setRandomQuery] = useState("");
 
   useEffect(() => {
     const loadInitial = async () => {
@@ -24,42 +36,17 @@ export default function HomeScreen() {
       const watch = await loadFromStorage("watchLater");
       setFavorites(favs);
       setWatchLater(watch);
-      handleSearch(DEFAULT_QUERY, 1);
+
+      const keyword = getRandomKeyword();
+      setRandomQuery(keyword);
+      handleSearch(keyword, 1);
     };
     loadInitial();
   }, []);
 
-  const handleAddFavorite = async (movie) => {
-    if (!favorites.find((fav) => fav.imdbID === movie.imdbID)) {
-      const updated = [...favorites, movie];
-      setFavorites(updated);
-      await saveToStorage("favorites", updated);
-      Toast.show(`${movie.Title} added to favorites`, {
-        duration: Toast.durations.SHORT,
-        position: Toast.positions.BOTTOM,
-      });
-    }
-  };
-
-  const handleAddWatchLater = async (movie) => {
-    if (!watchLater.find((m) => m.imdbID === movie.imdbID)) {
-      const updated = [...watchLater, movie];
-      setWatchLater(updated);
-      await saveToStorage("watchLater", updated);
-      Toast.show(`${movie.Title} added to Watch Later`, {
-        duration: Toast.durations.SHORT,
-        position: Toast.positions.BOTTOM,
-      });
-    }
-  };
-
-  const removeDuplicates = (movieArray) => {
-    const seen = new Set();
-    return movieArray.filter((movie) => {
-      if (seen.has(movie.imdbID)) return false;
-      seen.add(movie.imdbID);
-      return true;
-    });
+  const getRandomKeyword = () => {
+    const index = Math.floor(Math.random() * keywords.length);
+    return keywords[index];
   };
 
   const handleSearch = async (query, newPage = 1) => {
@@ -96,9 +83,42 @@ export default function HomeScreen() {
   };
 
   const handleLoadMore = () => {
-    if (!loading && hasMore) {
+    if (!loading && hasMore && randomQuery) {
       const nextPage = pageRef.current + 1;
-      handleSearch(DEFAULT_QUERY, nextPage);
+      handleSearch(randomQuery, nextPage);
+    }
+  };
+
+  const removeDuplicates = (movieArray) => {
+    const seen = new Set();
+    return movieArray.filter((movie) => {
+      if (seen.has(movie.imdbID)) return false;
+      seen.add(movie.imdbID);
+      return true;
+    });
+  };
+
+  const handleAddFavorite = async (movie) => {
+    if (!favorites.find((fav) => fav.imdbID === movie.imdbID)) {
+      const updated = [...favorites, movie];
+      setFavorites(updated);
+      await saveToStorage("favorites", updated);
+      Toast.show(`${movie.Title} added to favorites`, {
+        duration: Toast.durations.SHORT,
+        position: Toast.positions.BOTTOM,
+      });
+    }
+  };
+
+  const handleAddWatchLater = async (movie) => {
+    if (!watchLater.find((m) => m.imdbID === movie.imdbID)) {
+      const updated = [...watchLater, movie];
+      setWatchLater(updated);
+      await saveToStorage("watchLater", updated);
+      Toast.show(`${movie.Title} added to Watch Later`, {
+        duration: Toast.durations.SHORT,
+        position: Toast.positions.BOTTOM,
+      });
     }
   };
 
