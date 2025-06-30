@@ -22,11 +22,13 @@ export default function HomeScreen() {
   const [watchLater, setWatchLater] = useState([]);
 
   useEffect(() => {
-    const loadFavorites = async () => {
-      const stored = await loadFromStorage("favorites");
-      setFavorites(stored);
+    const load = async () => {
+      const favs = await loadFromStorage("favorites");
+      const watch = await loadFromStorage("watchLater");
+      setFavorites(favs);
+      setWatchLater(watch);
     };
-    loadFavorites();
+    load();
   }, []);
 
   const handleAddFavorite = async (movie) => {
@@ -47,10 +49,15 @@ export default function HomeScreen() {
     }
   };
 
-  const handleAddWatchLater = (movie) => {
+  const handleAddWatchLater = async (movie) => {
     if (!watchLater.find((m) => m.imdbID === movie.imdbID)) {
-      setWatchLater([...watchLater, movie]);
-      console.log("Added to watch later:", movie.Title);
+      const updated = [...watchLater, movie];
+      setWatchLater(updated);
+      await saveToStorage("watchLater", updated);
+      Toast.show(`${movie.Title} added to Watch Later`, {
+        duration: Toast.duration.SHORT,
+        position: Toast.position.BOTTOM,
+      });
     }
   };
 
@@ -65,7 +72,6 @@ export default function HomeScreen() {
 
   const handleSearch = async (searchQuery, newPage = 1, isRandom = false) => {
     const finalQuery = searchQuery || query;
-
     if (!finalQuery.trim()) return;
 
     if (newPage === 1) {
@@ -82,15 +88,12 @@ export default function HomeScreen() {
       const newMovies = removeDuplicates(
         newPage === 1 ? response.Search : [...movies, ...response.Search]
       );
-
       setMovies(newMovies);
       setError("");
       setHasMore(response.Search.length === 10);
-
       if (newPage === 1 && !isRandom) {
         setQuery(finalQuery);
       }
-
       pageRef.current = newPage;
       setPage(newPage);
     } else {

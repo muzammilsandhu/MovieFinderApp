@@ -3,34 +3,33 @@ import { useCallback, useState } from "react";
 import { View, Text, Alert } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import MovieList from "../components/MovieList";
-import { loadFromStorage } from "../utils/storage";
 import styles from "../styles/globalStyles";
 
-export default function FavoritesScreen() {
-  const [favorites, setFavorites] = useState([]);
+export default function WatchLaterScreen() {
+  const [watchLater, setWatchLater] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  const loadFavorites = async () => {
-    const stored = await AsyncStorage.getItem("favorites");
-    setFavorites(stored ? JSON.parse(stored) : []);
+  const loadWatchLater = async () => {
+    const stored = await AsyncStorage.getItem("watchLater");
+    setWatchLater(stored ? JSON.parse(stored) : []);
     setLoading(false);
   };
 
   useFocusEffect(
     useCallback(() => {
-      loadFavorites();
+      loadWatchLater();
     }, [])
   );
 
   const confirmRemove = (imdbID) => {
-    Alert.alert("Remove", "Remove this movie from favorites?", [
+    Alert.alert("Remove", "Remove this movie from Watch Later?", [
       { text: "Cancel", style: "cancel" },
       {
         text: "Remove",
         onPress: async () => {
-          const updated = favorites.filter((m) => m.imdbID !== imdbID);
-          await AsyncStorage.setItem("favorites", JSON.stringify(updated));
-          setFavorites(updated);
+          const updated = watchLater.filter((m) => m.imdbID !== imdbID);
+          await AsyncStorage.setItem("watchLater", JSON.stringify(updated));
+          setWatchLater(updated);
         },
         style: "destructive",
       },
@@ -39,11 +38,11 @@ export default function FavoritesScreen() {
 
   return (
     <View style={styles.favoritesContainer}>
-      <Text style={styles.favoritesTitle}>Your Favorite Movies</Text>
+      <Text style={styles.favoritesTitle}>Watch Later</Text>
       <MovieList
-        movies={favorites}
+        movies={watchLater}
         loading={loading}
-        error={favorites.length === 0 ? "No favorites yet." : ""}
+        error={watchLater.length === 0 ? "No movies in watch later list." : ""}
         onEndReached={() => {}}
         onFavorite={() => {}}
         onWatchLater={() => {}}

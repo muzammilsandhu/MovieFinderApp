@@ -2,6 +2,7 @@ import { NavigationContainer } from "@react-navigation/native";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import HomeScreen from "../screens/HomeScreen";
 import FavoritesScreen from "../screens/FavoritesScreen";
+import WatchLaterScreen from "../screens/WatchLaterScreen";
 import { Ionicons } from "@expo/vector-icons";
 
 const Tab = createBottomTabNavigator();
@@ -28,6 +29,15 @@ export default function AppNavigator() {
             ),
           }}
         />
+        <Tab.Screen
+          name="Watch Later"
+          component={WatchLaterScreen}
+          options={{
+            tabBarIcon: ({ color, size }) => (
+              <Ionicons name="time" color={color} size={size} />
+            ),
+          }}
+        ></Tab.Screen>
       </Tab.Navigator>
     </NavigationContainer>
   );
