@@ -1,34 +1,32 @@
 import { useState, useEffect, useRef } from "react";
 import { View } from "react-native";
 import Toast from "react-native-root-toast";
-import SearchBar from "../components/SearcBar";
 import MovieList from "../components/MovieList";
-import RandomKeywordLoader from "../components/RandomKeywordLoader";
 import { fetchMovieDetails, fetchMovies } from "../services/movieApi";
 import { saveToStorage, loadFromStorage } from "../utils/storage";
 import styles from "../styles/globalStyles";
 
 export default function HomeScreen() {
   const pageRef = useRef(1);
-  const debounceTimeout = useRef(null);
 
   const [movies, setMovies] = useState([]);
-  const [query, setQuery] = useState("");
-  const [page, setPage] = useState(1);
-  const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
   const [hasMore, setHasMore] = useState(true);
   const [favorites, setFavorites] = useState([]);
   const [watchLater, setWatchLater] = useState([]);
 
+  const DEFAULT_QUERY = "avengers";
+
   useEffect(() => {
-    const load = async () => {
+    const loadInitial = async () => {
       const favs = await loadFromStorage("favorites");
       const watch = await loadFromStorage("watchLater");
       setFavorites(favs);
       setWatchLater(watch);
+      handleSearch(DEFAULT_QUERY, 1);
     };
-    load();
+    loadInitial();
   }, []);
 
   const handleAddFavorite = async (movie) => {
@@ -36,13 +34,7 @@ export default function HomeScreen() {
       const updated = [...favorites, movie];
       setFavorites(updated);
       await saveToStorage("favorites", updated);
-
       Toast.show(`${movie.Title} added to favorites`, {
-        duration: Toast.durations.SHORT,
-        position: Toast.positions.BOTTOM,
-      });
-    } else {
-      Toast.show(`${movie.Title} is already in favorites`, {
         duration: Toast.durations.SHORT,
         position: Toast.positions.BOTTOM,
       });
@@ -70,84 +62,48 @@ export default function HomeScreen() {
     });
   };
 
-  const handleSearch = async (searchQuery, newPage = 1, isRandom = false) => {
-    const finalQuery = searchQuery || query;
-
-    if (!finalQuery.trim()) return;
-
-    if (newPage === 1) {
-      setMovies([]);
-      setHasMore(true);
-      setPage(1);
-    }
-
+  const handleSearch = async (query, newPage = 1) => {
     setLoading(true);
-
     try {
-      const response = await fetchMovies(finalQuery, newPage);
-
+      const response = await fetchMovies(query, newPage);
       if (response.Response === "True") {
-        const basicMovies = response.Search;
-
         const detailedMovies = await Promise.all(
-          basicMovies.map(async (movie) => {
+          response.Search.map(async (movie) => {
             const fullDetails = await fetchMovieDetails(movie.imdbID);
             return fullDetails.Response === "True" ? fullDetails : null;
           })
         );
 
         const validMovies = detailedMovies.filter(Boolean);
-
         const newMovies = removeDuplicates(
           newPage === 1 ? validMovies : [...movies, ...validMovies]
         );
 
         setMovies(newMovies);
-        setError("");
-        setHasMore(basicMovies.length === 10);
-        if (newPage === 1 && !isRandom) {
-          setQuery(finalQuery);
-        }
+        setHasMore(response.Search.length === 10);
         pageRef.current = newPage;
-        setPage(newPage);
       } else {
         if (newPage === 1) setMovies([]);
         setHasMore(false);
         setError(response.Error || "No results found");
       }
     } catch (error) {
-      console.error("Error fetching movies:", error);
+      console.error("Error fetching:", error);
       setError("Something went wrong");
     } finally {
       setLoading(false);
     }
   };
 
-  const debouncedSearch = (text) => {
-    clearTimeout(debounceTimeout.current);
-    debounceTimeout.current = setTimeout(() => {
-      handleSearch(text, 1);
-    }, 500);
-  };
-
   const handleLoadMore = () => {
-    if (!loading && hasMore && query.trim() !== "") {
+    if (!loading && hasMore) {
       const nextPage = pageRef.current + 1;
-      handleSearch(query, nextPage);
+      handleSearch(DEFAULT_QUERY, nextPage);
     }
   };
 
   return (
     <View style={styles.homeContainer}>
-      <SearchBar
-        query={query}
-        setQuery={setQuery}
-        onSearch={debouncedSearch}
-        loading={loading}
-      />
-      {query.length === 0 && (
-        <RandomKeywordLoader onLoad={(word) => handleSearch(word, 1, true)} />
-      )}
       <MovieList
         movies={movies}
         loading={loading}

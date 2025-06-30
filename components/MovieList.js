@@ -1,4 +1,5 @@
 import { FlatList, Text, ActivityIndicator } from "react-native";
+import { useRef } from "react";
 import MovieCard from "./MovieCard";
 import styles from "../styles/globalStyles";
 
@@ -11,6 +12,18 @@ export default function MovieList({
   onWatchLater,
   onRemove,
 }) {
+  const canCallOnEndReached = useRef(true);
+
+  const handleEndReached = () => {
+    if (canCallOnEndReached.current && !loading) {
+      canCallOnEndReached.current = false;
+      onEndReached?.();
+      setTimeout(() => {
+        canCallOnEndReached.current = true;
+      }, 1000);
+    }
+  };
+
   return (
     <>
       {error ? <Text style={styles.error}>{error}</Text> : null}
@@ -25,14 +38,14 @@ export default function MovieList({
             onRemove={onRemove}
           />
         )}
-        onEndReached={onEndReached}
+        onEndReached={handleEndReached}
         onEndReachedThreshold={0.2}
         ListFooterComponent={
           loading ? (
             <ActivityIndicator size="large" />
-          ) : (
+          ) : movies.length > 0 && !loading ? (
             <Text style={styles.footer}>You’ve reached the end</Text>
-          )
+          ) : null
         }
         ListEmptyComponent={
           !loading && !error ? (
