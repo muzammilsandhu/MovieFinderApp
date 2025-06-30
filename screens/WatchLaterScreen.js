@@ -37,8 +37,8 @@ export default function WatchLaterScreen() {
   };
 
   return (
-    <View style={styles.favoritesContainer}>
-      <Text style={styles.favoritesTitle}>Watch Later</Text>
+    <View style={styles.moviesContainer}>
+      <Text style={styles.moviesTitle}>Watch Later</Text>
       <MovieList
         movies={watchLater}
         loading={loading}

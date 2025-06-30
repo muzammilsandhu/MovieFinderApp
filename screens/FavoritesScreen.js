@@ -38,8 +38,8 @@ export default function FavoritesScreen() {
   };
 
   return (
-    <View style={styles.favoritesContainer}>
-      <Text style={styles.favoritesTitle}>Your Favorite Movies</Text>
+    <View style={styles.moviesContainer}>
+      <Text style={styles.moviesTitle}>Your Favorite Movies</Text>
       <MovieList
         movies={favorites}
         loading={loading}

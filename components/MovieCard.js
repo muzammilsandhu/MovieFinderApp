@@ -1,6 +1,6 @@
 import { View, Text, Image, TouchableOpacity } from "react-native";
 import styles from "../styles/globalStyles";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import { Ionicons } from "@expo/vector-icons";
 
 export default function MovieCard({
   movie,
@@ -20,24 +20,33 @@ export default function MovieCard({
         style={styles.poster}
       />
       <View style={styles.info}>
-        <Text style={styles.title}>{movie.Title}</Text>
-        <Text>{movie.Year}</Text>
+        <View>
+          <Text style={styles.title}>{movie.Title}</Text>
+          <Text>{movie.Year}</Text>
+        </View>
         <View style={styles.actions}>
           {onFavorite && (
-            <TouchableOpacity onPress={() => onFavorite(movie)}>
-              <Text style={styles.actionButton}>❤️ Favorite</Text>
+            <TouchableOpacity
+              onPress={() => onFavorite(movie)}
+              style={styles.actionButton}
+            >
+              <Ionicons name="heart-outline" size={24} color="#ff4b4b" />
             </TouchableOpacity>
           )}
           {onWatchLater && (
-            <TouchableOpacity onPress={() => onWatchLater(movie)}>
-              <Text style={styles.actionButton}>⏰ Watch Later</Text>
+            <TouchableOpacity
+              onPress={() => onWatchLater(movie)}
+              style={styles.actionButton}
+            >
+              <Ionicons name="time-outline" size={24} color="#007bff" />
             </TouchableOpacity>
           )}
           {onRemove && (
-            <TouchableOpacity onPress={() => onRemove(movie.imdbID)}>
-              <Text style={[styles.actionButton, { color: "red" }]}>
-                🗑 Remove
-              </Text>
+            <TouchableOpacity
+              onPress={() => onRemove(movie.imdbID)}
+              style={styles.actionButton}
+            >
+              <Ionicons name="trash-outline" size={24} color="#d11a2a" />
             </TouchableOpacity>
           )}
         </View>
