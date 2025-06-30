@@ -46,6 +46,7 @@ export default function WatchLaterScreen() {
         onFavorite={() => {}}
         onWatchLater={() => {}}
         onRemove={confirmRemove}
+        watchLater={watchLater}
       />
       <ConfirmModal
         visible={modalVisible}

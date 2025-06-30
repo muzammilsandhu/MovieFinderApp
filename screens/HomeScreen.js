@@ -5,7 +5,6 @@ import MovieList from "../components/MovieList";
 import { fetchMovieDetails, fetchMovies } from "../services/movieApi";
 import { saveToStorage, loadFromStorage } from "../utils/storage";
 import styles from "../styles/globalStyles";
-import { SearchBar } from "react-native-screens";
 
 const keywords = [
   "action",
@@ -124,9 +123,16 @@ export default function HomeScreen() {
 
   return (
     <View style={styles.homeContainer}>
-      <SearchBar />
+      {/* <SearchBar
+        query={query}
+        setQuery={setQuery}
+        onSearchButtonPress={(text) => handleSearch(text, 1)}
+        loading={{}}
+      /> */}
       <MovieList
         movies={movies}
+        favorites={favorites}
+        watchLater={watchLater}
         loading={loading}
         error={error}
         onEndReached={handleLoadMore}

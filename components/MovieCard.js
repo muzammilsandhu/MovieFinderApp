@@ -4,6 +4,8 @@ import styles from "../styles/globalStyles";
 
 export default function MovieCard({
   movie,
+  isFavorite,
+  isWatchLater,
   onFavorite,
   onWatchLater,
   onRemove,
@@ -33,7 +35,11 @@ export default function MovieCard({
               onPress={() => onFavorite(movie)}
               style={styles.actionButton}
             >
-              <Ionicons name="heart-outline" size={24} color="#ff4b4b" />
+              <Ionicons
+                name={isFavorite ? "heart" : "heart-outline"}
+                size={24}
+                color="#ff4b4b"
+              />
             </TouchableOpacity>
           )}
           {onWatchLater && (
@@ -41,7 +47,11 @@ export default function MovieCard({
               onPress={() => onWatchLater(movie)}
               style={styles.actionButton}
             >
-              <Ionicons name="time-outline" size={24} color="#007bff" />
+              <Ionicons
+                name={isWatchLater ? "time" : "time-outline"}
+                size={24}
+                color="#007bff"
+              />
             </TouchableOpacity>
           )}
           {onRemove && (

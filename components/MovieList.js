@@ -5,11 +5,13 @@ import styles from "../styles/globalStyles";
 
 export default function MovieList({
   movies,
+  favorites,
+  watchLater,
   loading,
   error,
   onEndReached,
-  onFavorite,
-  onWatchLater,
+  onFavorite = [],
+  onWatchLater = [],
   onRemove,
 }) {
   const canCallOnEndReached = useRef(true);
@@ -34,6 +36,8 @@ export default function MovieList({
         renderItem={({ item }) => (
           <MovieCard
             movie={item}
+            isFavorite={favorites?.some((m) => m.imdbID === item.imdbID)}
+            isWatchLater={watchLater?.some((m) => m.imdbID === item.imdbID)}
             onFavorite={onFavorite}
             onWatchLater={onWatchLater}
             onRemove={onRemove}

@@ -1,8 +1,8 @@
 import { useFocusEffect } from "@react-navigation/native";
 import { useCallback, useState } from "react";
 import { View } from "react-native";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import MovieList from "../components/MovieList";
+import { loadFromStorage, saveToStorage } from "../utils/storage";
 import ConfirmModal from "../components/ConfirmModal";
 import styles from "../styles/globalStyles";
 
@@ -13,8 +13,8 @@ export default function FavoritesScreen() {
   const [modalVisible, setModalVisible] = useState(false);
 
   const loadFavorites = async () => {
-    const stored = await AsyncStorage.getItem("favorites");
-    setFavorites(stored ? JSON.parse(stored) : []);
+    const stored = await loadFromStorage("favorites");
+    setFavorites(stored || []);
     setLoading(false);
   };
 
@@ -31,7 +31,7 @@ export default function FavoritesScreen() {
 
   const handleRemove = async () => {
     const updated = favorites.filter((m) => m.imdbID !== selectedID);
-    await AsyncStorage.setItem("favorites", JSON.stringify(updated));
+    await saveToStorage("favorites", updated);
     setFavorites(updated);
     setModalVisible(false);
   };
@@ -46,6 +46,7 @@ export default function FavoritesScreen() {
         onFavorite={() => {}}
         onWatchLater={() => {}}
         onRemove={confirmRemove}
+        favorites={favorites}
       />
 
       <ConfirmModal
