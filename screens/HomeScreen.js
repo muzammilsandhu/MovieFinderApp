@@ -5,6 +5,7 @@ import MovieList from "../components/MovieList";
 import { fetchMovieDetails, fetchMovies } from "../services/movieApi";
 import { saveToStorage, loadFromStorage } from "../utils/storage";
 import styles from "../styles/globalStyles";
+import { SearchBar } from "react-native-screens";
 
 const keywords = [
   "action",
@@ -21,7 +22,6 @@ const keywords = [
 
 export default function HomeScreen() {
   const pageRef = useRef(1);
-
   const [movies, setMovies] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -124,6 +124,7 @@ export default function HomeScreen() {
 
   return (
     <View style={styles.homeContainer}>
+      <SearchBar />
       <MovieList
         movies={movies}
         loading={loading}
