@@ -8,7 +8,7 @@ import {
 } from "react-native";
 import Toast from "react-native-root-toast";
 import MovieList from "../components/MovieList";
-import CustomSearchBar from "../components/CustomSearchBar";
+import MovieSearchBar from "../components/MovieSearchBar";
 import { fetchMovieDetails, fetchMovies } from "../services/movieApi";
 import { saveToStorage, loadFromStorage } from "../utils/storage";
 import styles from "../styles/globalStyles";
@@ -29,7 +29,7 @@ const genres = [
 export default function HomeScreen() {
   const pageRef = useRef(1);
   const [movies, setMovies] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [loadingMovies, setLoadingMovies] = useState(false);
   const [error, setError] = useState("");
   const [hasMore, setHasMore] = useState(true);
   const [favorites, setFavorites] = useState([]);
@@ -37,6 +37,7 @@ export default function HomeScreen() {
   const [randomQuery, setRandomQuery] = useState("");
   const [selectedGenre, setSelectedGenre] = useState("All");
   const [query, setQuery] = useState("");
+  const [loadingSearch, setLoadingSearch] = useState(false);
 
   useEffect(() => {
     const loadInitial = async () => {
@@ -45,22 +46,23 @@ export default function HomeScreen() {
       setFavorites(favs);
       setWatchLater(watch);
 
-      const keyword = getRandomKeyword();
+      const keyword = "movie";
       setRandomQuery(keyword);
-      handleSearch(keyword, 1);
+      handleSearch(keyword, 1, false);
     };
     loadInitial();
   }, []);
 
   const getRandomKeyword = () => {
-    const index = Math.floor(Math.random() * genres.length);
-    return genres[index].toLowerCase();
+    return "movie";
   };
 
-  const handleSearch = async (query, newPage = 1) => {
-    setLoading(true);
+  const handleSearch = async (query, newPage = 1, isSearch = false) => {
+    if (isSearch) setLoadingSearch(true);
+    setLoadingMovies(true);
     try {
-      const response = await fetchMovies(query, newPage);
+      const searchQuery = query === "all" ? "movie" : query.toLowerCase();
+      const response = await fetchMovies(searchQuery, newPage);
       if (response.Response === "True") {
         const detailedMovies = await Promise.all(
           response.Search.map(async (movie) => {
@@ -77,7 +79,7 @@ export default function HomeScreen() {
         setMovies(newMovies);
         setHasMore(response.Search.length === 10);
         pageRef.current = newPage;
-        Keyboard.dismiss();
+        if (isSearch) Keyboard.dismiss();
       } else {
         if (newPage === 1) setMovies([]);
         setHasMore(false);
@@ -87,14 +89,15 @@ export default function HomeScreen() {
       console.error("Error fetching:", error);
       setError("Something went wrong");
     } finally {
-      setLoading(false);
+      if (isSearch) setLoadingSearch(false);
+      setLoadingMovies(false);
     }
   };
 
   const handleLoadMore = () => {
-    if (!loading && hasMore && randomQuery) {
+    if (!loadingMovies && hasMore && randomQuery) {
       const nextPage = pageRef.current + 1;
-      handleSearch(randomQuery, nextPage);
+      handleSearch(randomQuery, nextPage, false);
     }
   };
 
@@ -140,11 +143,11 @@ export default function HomeScreen() {
 
   return (
     <View style={styles.homeContainer}>
-      <CustomSearchBar
+      <MovieSearchBar
         query={query}
         setQuery={setQuery}
-        onSearch={(text) => handleSearch(text, 1)}
-        loading={loading}
+        onSearch={(text) => handleSearch(text, 1, true)}
+        loading={loadingSearch}
       />
       <ScrollView
         horizontal
@@ -156,7 +159,7 @@ export default function HomeScreen() {
             key={genre}
             onPress={() => {
               setSelectedGenre(genre);
-              handleSearch(genre.toLowerCase(), 1);
+              handleSearch(genre.toLowerCase(), 1, true);
             }}
             style={{
               backgroundColor: selectedGenre === genre ? "#cc0000" : "#eee",
@@ -181,7 +184,7 @@ export default function HomeScreen() {
         movies={filteredMovies}
         favorites={favorites}
         watchLater={watchLater}
-        loading={loading}
+        loading={loadingMovies}
         error={error}
         onEndReached={handleLoadMore}
         onFavorite={handleAddFavorite}
