@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import {
   View,
   Text,
@@ -8,6 +8,7 @@ import {
   ActivityIndicator,
 } from "react-native";
 import Toast from "react-native-root-toast";
+import debounce from "lodash/debounce";
 import MovieList from "../components/MovieList";
 import MovieSearchBar from "../components/MovieSearchBar";
 import { fetchMovieDetails, fetchMovies } from "../services/movieApi";
@@ -30,7 +31,8 @@ const genres = [
 export default function HomeScreen() {
   const pageRef = useRef(1);
   const [movies, setMovies] = useState([]);
-  const [loadingMovies, setLoadingMovies] = useState(false);
+  const [initialLoading, setInitialLoading] = useState(false);
+  const [paginationLoading, setPaginationLoading] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const [favorites, setFavorites] = useState([]);
   const [watchLater, setWatchLater] = useState([]);
@@ -54,8 +56,10 @@ export default function HomeScreen() {
   }, []);
 
   const handleSearch = async (query, newPage = 1, isSearch = false) => {
+    if (isSearch || newPage === 1) setInitialLoading(true);
+    else setPaginationLoading(true);
     if (isSearch) setLoadingSearch(true);
-    setLoadingMovies(true);
+
     try {
       const searchQuery = query === "all" ? "movie" : query.toLowerCase();
       const response = await fetchMovies(searchQuery, newPage);
@@ -73,7 +77,7 @@ export default function HomeScreen() {
           newPage === 1 ? validMovies : [...movies, ...validMovies]
         );
 
-        await new Promise((resolve) => setTimeout(resolve, 500)); // slight delay for UI
+        await new Promise((resolve) => setTimeout(resolve, 500));
         setMovies(newMovies);
         setHasMore(response.Search.length === 10);
         pageRef.current = newPage;
@@ -85,8 +89,24 @@ export default function HomeScreen() {
     } catch (error) {
       console.error("Error fetching:", error);
     } finally {
+      setInitialLoading(false);
+      setPaginationLoading(false);
       if (isSearch) setLoadingSearch(false);
-      setLoadingMovies(false);
+    }
+  };
+
+  // ✅ Debounced wrapper to prevent rapid search
+  const debouncedSearch = useCallback(
+    debounce((text) => {
+      handleSearch(text, 1, true);
+    }, 500),
+    []
+  );
+
+  const handleLoadMore = () => {
+    if (!paginationLoading && hasMore && randomQuery) {
+      const nextPage = pageRef.current + 1;
+      handleSearch(randomQuery, nextPage, false);
     }
   };
 
@@ -98,13 +118,6 @@ export default function HomeScreen() {
       seen.add(id);
       return true;
     });
-  };
-
-  const handleLoadMore = () => {
-    if (!loadingMovies && hasMore && randomQuery) {
-      const nextPage = pageRef.current + 1;
-      handleSearch(randomQuery, nextPage, false);
-    }
   };
 
   const handleAddFavorite = async (imdbID) => {
@@ -128,17 +141,21 @@ export default function HomeScreen() {
     }
   };
 
-  const handleAddWatchLater = async (movie) => {
-    if (!watchLater.find((m) => m.imdbID === movie.imdbID)) {
-      const updated = [...watchLater, movie];
-      setWatchLater(updated);
-      await saveToStorage("watchLater", updated);
+  const handleAddWatchLater = async (imdbID) => {
+    const alreadyExists = watchLater.some((m) => m.imdbID === imdbID);
+    if (alreadyExists) return;
 
-      Toast.show(`${movie.Title} added to Watch Later`, {
-        duration: Toast.durations.SHORT,
-        position: Toast.positions.BOTTOM,
-      });
-    }
+    const fullDetails = await fetchMovieDetails(imdbID);
+    if (fullDetails?.Response !== "True") return;
+
+    const updated = [...watchLater, { ...fullDetails }];
+    setWatchLater(updated);
+    await saveToStorage("watchLater", updated);
+
+    Toast.show(`${fullDetails.Title} added to Watch Later`, {
+      duration: Toast.durations.SHORT,
+      position: Toast.positions.BOTTOM,
+    });
   };
 
   const filteredMovies =
@@ -153,7 +170,7 @@ export default function HomeScreen() {
       <MovieSearchBar
         query={query}
         setQuery={setQuery}
-        onSearch={(text) => handleSearch(text, 1, true)}
+        onSearch={debouncedSearch} // ✅ pass debounced function
         loading={loadingSearch}
       />
 
@@ -189,7 +206,7 @@ export default function HomeScreen() {
         ))}
       </ScrollView>
 
-      {loadingMovies ? (
+      {initialLoading ? (
         <View style={styles.spinnerContainer}>
           <ActivityIndicator
             size="large"
@@ -202,7 +219,7 @@ export default function HomeScreen() {
           movies={filteredMovies}
           favorites={favorites}
           watchLater={watchLater}
-          loading={loadingMovies}
+          loading={paginationLoading}
           onEndReached={handleLoadMore}
           onFavorite={handleAddFavorite}
           onWatchLater={handleAddWatchLater}

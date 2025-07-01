@@ -12,7 +12,7 @@ export default function MovieList({
   onEndReached,
   onFavorite = () => {},
   onWatchLater = () => {},
-  onRemove = () => {},
+  onRemove,
 }) {
   const canCallOnEndReached = useRef(true);
 
@@ -40,7 +40,7 @@ export default function MovieList({
             isWatchLater={watchLater?.some((m) => m.imdbID === item.imdbID)}
             onFavorite={onFavorite}
             onWatchLater={onWatchLater}
-            onRemove={onRemove}
+            {...(onRemove && { onRemove })}
           />
         )}
         onEndReached={handleEndReached}

@@ -1,9 +1,4 @@
-import {
-  View,
-  TextInput,
-  ActivityIndicator,
-  TouchableOpacity,
-} from "react-native";
+import { View, TextInput, TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import styles from "../styles/globalStyles";
 
@@ -23,13 +18,14 @@ export default function MovieSearchBar({ query, setQuery, onSearch, loading }) {
         value={query}
         onChangeText={(text) => {
           setQuery(text);
-          onSearch(text);
+          onSearch(text); // ✅ Now debounced
         }}
       />
       {query.length > 0 && (
         <TouchableOpacity
           onPress={() => {
             setQuery("");
+            onSearch("");
           }}
         >
           <Ionicons name="close-circle" size={20} color="#888" />
