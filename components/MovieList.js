@@ -10,9 +10,9 @@ export default function MovieList({
   loading,
   error,
   onEndReached,
-  onFavorite = [],
-  onWatchLater = [],
-  onRemove,
+  onFavorite = () => {},
+  onWatchLater = () => {},
+  onRemove = () => {},
 }) {
   const canCallOnEndReached = useRef(true);
 

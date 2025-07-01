@@ -30,7 +30,6 @@ export default function MovieSearchBar({ query, setQuery, onSearch, loading }) {
         <TouchableOpacity
           onPress={() => {
             setQuery("");
-            onSearch("");
           }}
         >
           <Ionicons name="close-circle" size={20} color="#888" />

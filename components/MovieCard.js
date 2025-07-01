@@ -32,7 +32,7 @@ export default function MovieCard({
         <View style={styles.actions}>
           {onFavorite && (
             <TouchableOpacity
-              onPress={() => onFavorite(movie)}
+              onPress={() => onFavorite(movie.imdbID)}
               style={styles.actionButton}
             >
               <Ionicons

@@ -5,6 +5,7 @@ import {
   TouchableOpacity,
   ScrollView,
   Keyboard,
+  ActivityIndicator,
 } from "react-native";
 import Toast from "react-native-root-toast";
 import MovieList from "../components/MovieList";
@@ -12,7 +13,6 @@ import MovieSearchBar from "../components/MovieSearchBar";
 import { fetchMovieDetails, fetchMovies } from "../services/movieApi";
 import { saveToStorage, loadFromStorage } from "../utils/storage";
 import styles from "../styles/globalStyles";
-import { ActivityIndicator } from "react-native";
 
 const genres = [
   "All",
@@ -31,7 +31,6 @@ export default function HomeScreen() {
   const pageRef = useRef(1);
   const [movies, setMovies] = useState([]);
   const [loadingMovies, setLoadingMovies] = useState(false);
-  const [error, setError] = useState("");
   const [hasMore, setHasMore] = useState(true);
   const [favorites, setFavorites] = useState([]);
   const [watchLater, setWatchLater] = useState([]);
@@ -44,8 +43,8 @@ export default function HomeScreen() {
     const loadInitial = async () => {
       const favs = await loadFromStorage("favorites");
       const watch = await loadFromStorage("watchLater");
-      setFavorites(favs);
-      setWatchLater(watch);
+      setFavorites(favs || []);
+      setWatchLater(watch || []);
 
       const keyword = "movie";
       setRandomQuery(keyword);
@@ -54,21 +53,18 @@ export default function HomeScreen() {
     loadInitial();
   }, []);
 
-  const getRandomKeyword = () => {
-    return "movie";
-  };
-
   const handleSearch = async (query, newPage = 1, isSearch = false) => {
     if (isSearch) setLoadingSearch(true);
     setLoadingMovies(true);
     try {
       const searchQuery = query === "all" ? "movie" : query.toLowerCase();
       const response = await fetchMovies(searchQuery, newPage);
+
       if (response.Response === "True") {
         const detailedMovies = await Promise.all(
           response.Search.map(async (movie) => {
             const fullDetails = await fetchMovieDetails(movie.imdbID);
-            return fullDetails.Response === "True" ? fullDetails : null;
+            return fullDetails.Response === "True" ? { ...fullDetails } : null;
           })
         );
 
@@ -77,6 +73,7 @@ export default function HomeScreen() {
           newPage === 1 ? validMovies : [...movies, ...validMovies]
         );
 
+        await new Promise((resolve) => setTimeout(resolve, 500)); // slight delay for UI
         setMovies(newMovies);
         setHasMore(response.Search.length === 10);
         pageRef.current = newPage;
@@ -84,15 +81,23 @@ export default function HomeScreen() {
       } else {
         if (newPage === 1) setMovies([]);
         setHasMore(false);
-        setError(response.Error || "No results found");
       }
     } catch (error) {
       console.error("Error fetching:", error);
-      setError("Something went wrong");
     } finally {
       if (isSearch) setLoadingSearch(false);
       setLoadingMovies(false);
     }
+  };
+
+  const removeDuplicates = (movieArray) => {
+    const seen = new Set();
+    return movieArray.filter((movie) => {
+      const id = String(movie.imdbID);
+      if (seen.has(id)) return false;
+      seen.add(id);
+      return true;
+    });
   };
 
   const handleLoadMore = () => {
@@ -102,24 +107,24 @@ export default function HomeScreen() {
     }
   };
 
-  const removeDuplicates = (movieArray) => {
-    const seen = new Set();
-    return movieArray.filter((movie) => {
-      if (seen.has(movie.imdbID)) return false;
-      seen.add(movie.imdbID);
-      return true;
-    });
-  };
+  const handleAddFavorite = async (imdbID) => {
+    const alreadyExists = favorites.some((fav) => fav.imdbID === imdbID);
+    if (alreadyExists) return;
 
-  const handleAddFavorite = async (movie) => {
-    if (!favorites.find((fav) => fav.imdbID === movie.imdbID)) {
-      const updated = [...favorites, movie];
+    try {
+      const fullDetails = await fetchMovieDetails(imdbID);
+      if (fullDetails?.Response !== "True") return;
+
+      const updated = [...favorites, { ...fullDetails }];
       setFavorites(updated);
       await saveToStorage("favorites", updated);
-      Toast.show(`${movie.Title} added to favorites`, {
+
+      Toast.show(`${fullDetails.Title} added to favorites`, {
         duration: Toast.durations.SHORT,
         position: Toast.positions.BOTTOM,
       });
+    } catch (err) {
+      console.log("Favorite error:", err);
     }
   };
 
@@ -128,6 +133,7 @@ export default function HomeScreen() {
       const updated = [...watchLater, movie];
       setWatchLater(updated);
       await saveToStorage("watchLater", updated);
+
       Toast.show(`${movie.Title} added to Watch Later`, {
         duration: Toast.durations.SHORT,
         position: Toast.positions.BOTTOM,
@@ -150,6 +156,7 @@ export default function HomeScreen() {
         onSearch={(text) => handleSearch(text, 1, true)}
         loading={loadingSearch}
       />
+
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
@@ -181,6 +188,7 @@ export default function HomeScreen() {
           </TouchableOpacity>
         ))}
       </ScrollView>
+
       {loadingMovies ? (
         <View style={styles.spinnerContainer}>
           <ActivityIndicator
@@ -195,7 +203,6 @@ export default function HomeScreen() {
           favorites={favorites}
           watchLater={watchLater}
           loading={loadingMovies}
-          error={error}
           onEndReached={handleLoadMore}
           onFavorite={handleAddFavorite}
           onWatchLater={handleAddWatchLater}
