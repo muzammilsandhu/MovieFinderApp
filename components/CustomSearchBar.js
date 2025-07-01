@@ -7,7 +7,12 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import styles from "../styles/globalStyles";
 
-export default function SearchBar({ query, setQuery, onSearch, loading }) {
+export default function CustomSearchBar({
+  query,
+  setQuery,
+  onSearch,
+  loading,
+}) {
   return (
     <View style={styles.searchContainer}>
       <Ionicons

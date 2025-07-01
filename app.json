@@ -1,17 +1,28 @@
 {
   "expo": {
-    "name": "MovieFinderApp",
-    "slug": "MovieFinderApp",
+    "name": "MovieTracker",
+    "slug": "MovieTracker",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "userInterfaceStyle": "light",
+    "userInterfaceStyle": "dark",
     "newArchEnabled": true,
+    "splash": {
+      "image": "./assets/icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#cc0000"
+    },
     "ios": {
       "supportsTablet": true
     },
     "android": {
-      "edgeToEdgeEnabled": true
+      "edgeToEdgeEnabled": true,
+      "package": "com.muzammilsandhu.MovieTracker"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "e5f53861-35a2-42a5-9f62-22803dae38f0"
+      }
     }
   }
 }

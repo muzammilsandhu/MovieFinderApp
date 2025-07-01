@@ -1,7 +1,14 @@
 import { useState, useEffect, useRef } from "react";
-import { View, Text, TouchableOpacity, ScrollView } from "react-native";
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  ScrollView,
+  Keyboard,
+} from "react-native";
 import Toast from "react-native-root-toast";
 import MovieList from "../components/MovieList";
+import CustomSearchBar from "../components/CustomSearchBar";
 import { fetchMovieDetails, fetchMovies } from "../services/movieApi";
 import { saveToStorage, loadFromStorage } from "../utils/storage";
 import styles from "../styles/globalStyles";
@@ -29,6 +36,7 @@ export default function HomeScreen() {
   const [watchLater, setWatchLater] = useState([]);
   const [randomQuery, setRandomQuery] = useState("");
   const [selectedGenre, setSelectedGenre] = useState("All");
+  const [query, setQuery] = useState("");
 
   useEffect(() => {
     const loadInitial = async () => {
@@ -69,6 +77,7 @@ export default function HomeScreen() {
         setMovies(newMovies);
         setHasMore(response.Search.length === 10);
         pageRef.current = newPage;
+        Keyboard.dismiss();
       } else {
         if (newPage === 1) setMovies([]);
         setHasMore(false);
@@ -131,6 +140,12 @@ export default function HomeScreen() {
 
   return (
     <View style={styles.homeContainer}>
+      <CustomSearchBar
+        query={query}
+        setQuery={setQuery}
+        onSearch={(text) => handleSearch(text, 1)}
+        loading={loading}
+      />
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
@@ -139,16 +154,24 @@ export default function HomeScreen() {
         {genres.map((genre) => (
           <TouchableOpacity
             key={genre}
-            onPress={() => setSelectedGenre(genre)}
+            onPress={() => {
+              setSelectedGenre(genre);
+              handleSearch(genre.toLowerCase(), 1);
+            }}
             style={{
               backgroundColor: selectedGenre === genre ? "#cc0000" : "#eee",
               paddingVertical: 6,
               paddingHorizontal: 12,
-              borderRadius: 20,
+              borderRadius: 8,
               marginRight: 10,
             }}
           >
-            <Text style={{ color: selectedGenre === genre ? "#fff" : "#333" }}>
+            <Text
+              style={{
+                color: selectedGenre === genre ? "#fff" : "#333",
+                fontWeight: "bold",
+              }}
+            >
               {genre}
             </Text>
           </TouchableOpacity>
