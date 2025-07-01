@@ -36,13 +36,6 @@ export default function MovieSearchBar({ query, setQuery, onSearch, loading }) {
           <Ionicons name="close-circle" size={20} color="#888" />
         </TouchableOpacity>
       )}
-      {loading && (
-        <ActivityIndicator
-          size="small"
-          color="#cc0000"
-          style={{ marginLeft: 10 }}
-        />
-      )}
     </View>
   );
 }

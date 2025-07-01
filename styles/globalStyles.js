@@ -109,4 +109,10 @@ export default StyleSheet.create({
     color: "#fff",
     fontWeight: "bold",
   },
+
+  spinnerContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
 });

@@ -12,6 +12,7 @@ import MovieSearchBar from "../components/MovieSearchBar";
 import { fetchMovieDetails, fetchMovies } from "../services/movieApi";
 import { saveToStorage, loadFromStorage } from "../utils/storage";
 import styles from "../styles/globalStyles";
+import { ActivityIndicator } from "react-native";
 
 const genres = [
   "All",
@@ -180,16 +181,26 @@ export default function HomeScreen() {
           </TouchableOpacity>
         ))}
       </ScrollView>
-      <MovieList
-        movies={filteredMovies}
-        favorites={favorites}
-        watchLater={watchLater}
-        loading={loadingMovies}
-        error={error}
-        onEndReached={handleLoadMore}
-        onFavorite={handleAddFavorite}
-        onWatchLater={handleAddWatchLater}
-      />
+      {loadingMovies ? (
+        <View style={styles.spinnerContainer}>
+          <ActivityIndicator
+            size="large"
+            color="#cc0000"
+            style={{ transform: [{ scale: 2 }] }}
+          />
+        </View>
+      ) : (
+        <MovieList
+          movies={filteredMovies}
+          favorites={favorites}
+          watchLater={watchLater}
+          loading={loadingMovies}
+          error={error}
+          onEndReached={handleLoadMore}
+          onFavorite={handleAddFavorite}
+          onWatchLater={handleAddWatchLater}
+        />
+      )}
     </View>
   );
 }

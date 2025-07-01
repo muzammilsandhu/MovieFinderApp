@@ -48,7 +48,7 @@ export default function AppNavigator() {
               <Ionicons name="time" color={color} size={size} />
             ),
           }}
-        ></Tab.Screen>
+        />
       </Tab.Navigator>
     </NavigationContainer>
   );
