@@ -5,7 +5,10 @@ export default function MovieDetailsScreen({ route }) {
   const { movie } = route.params;
 
   return (
-    <ScrollView style={styles.container}>
+    <ScrollView
+      style={styles.container}
+      contentContainerStyle={{ paddingBottom: 50 }}
+    >
       <Image
         source={{
           uri:
@@ -13,49 +16,36 @@ export default function MovieDetailsScreen({ route }) {
               ? movie.Poster
               : "https://via.placeholder.com/300x450",
         }}
-        style={localStyles.poster}
-        resizeMode="contain"
+        style={styles.detailsPoster}
+        resizeMode="cover"
       />
-      <View style={localStyles.detailsContainer}>
-        <Text style={localStyles.title}>{movie.Title}</Text>
-        <Text style={localStyles.subtitle}>Year: {movie.Year}</Text>
-        <Text style={localStyles.subtitle}>Genre: {movie.Genre}</Text>
-        <Text style={localStyles.subtitle}>Director: {movie.Director}</Text>
-        <Text style={localStyles.subtitle}>Actors: {movie.Actors}</Text>
-        <Text style={localStyles.subtitle}>
-          IMDb Rating: {movie.imdbRating}
-        </Text>
-        <Text style={localStyles.plot}>Plot: {movie.Plot}</Text>
+      <View style={styles.detailsContainer}>
+        <Text style={styles.detailsTitle}>{movie.Title}</Text>
+        <Text style={styles.detailsYear}>({movie.Year})</Text>
+
+        <View style={styles.meta}>
+          <Text style={styles.detailsLabel}>Genre:</Text>
+          <Text style={styles.detailsValue}>{movie.Genre}</Text>
+        </View>
+
+        <View style={styles.meta}>
+          <Text style={styles.detailsLabel}>Director:</Text>
+          <Text style={styles.detailsValue}>{movie.Director}</Text>
+        </View>
+
+        <View style={styles.meta}>
+          <Text style={styles.detailsLabel}>Actors:</Text>
+          <Text style={styles.detailsValue}>{movie.Actors}</Text>
+        </View>
+
+        <View style={styles.meta}>
+          <Text style={styles.detailsLabel}>IMDb Rating:</Text>
+          <Text style={styles.detailsValue}>{movie.imdbRating}</Text>
+        </View>
+
+        <Text style={styles.plot}>Plot</Text>
+        <Text style={styles.plot}>{movie.Plot}</Text>
       </View>
     </ScrollView>
   );
 }
-
-const localStyles = StyleSheet.create({
-  poster: {
-    width: "100%",
-    height: 400,
-    borderRadius: 10,
-    marginBottom: 20,
-  },
-  detailsContainer: {
-    paddingHorizontal: 16,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: "bold",
-    color: "#fff", // Matches DarkTheme
-    marginBottom: 10,
-  },
-  subtitle: {
-    fontSize: 16,
-    color: "#b3b3b3", // Matches tabBarInactiveTintColor
-    marginBottom: 8,
-  },
-  plot: {
-    fontSize: 14,
-    color: "#b3b3b3",
-    lineHeight: 22,
-    marginTop: 10,
-  },
-});

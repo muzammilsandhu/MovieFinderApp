@@ -115,4 +115,53 @@ export default StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
+
+  detailsPoster: {
+    width: "100%",
+    height: 450,
+    borderBottomLeftRadius: 10,
+    borderBottomRightRadius: 10,
+    marginBottom: 20,
+  },
+  detailsContainer: {
+    paddingHorizontal: 16,
+    paddingBottom: 30,
+  },
+  detailsTitle: {
+    fontSize: 24,
+    fontWeight: "bold",
+    color: theme.textPrimary,
+    marginBottom: 6,
+  },
+  detailsYear: {
+    fontSize: 16,
+    color: theme.textSecondary,
+    marginBottom: 16,
+  },
+  meta: {
+    flexDirection: "row",
+    marginBottom: 10,
+  },
+  detailsLabel: {
+    fontWeight: "bold",
+    color: theme.textPrimary,
+    width: 100,
+  },
+  detailsValue: {
+    flex: 1,
+    color: theme.textSecondary,
+  },
+  plotLabel: {
+    fontSize: 18,
+    fontWeight: "bold",
+    color: theme.textPrimary,
+    marginTop: 24,
+    marginBottom: 8,
+    textTransform: "uppercase",
+  },
+  plot: {
+    fontSize: 15,
+    lineHeight: 22,
+    color: theme.textSecondary,
+  },
 });
