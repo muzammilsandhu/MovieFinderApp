@@ -2,6 +2,7 @@ import { useFocusEffect } from "@react-navigation/native";
 import { useCallback, useState } from "react";
 import { View } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+
 import MovieList from "../components/MovieList";
 import ConfirmModal from "../components/ConfirmModal";
 import styles from "../styles/globalStyles";

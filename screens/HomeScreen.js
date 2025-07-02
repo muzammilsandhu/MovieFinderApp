@@ -9,13 +9,14 @@ import {
 } from "react-native";
 import Toast from "react-native-root-toast";
 import debounce from "lodash/debounce";
+
 import MovieList from "../components/MovieList";
 import MovieSearchBar from "../components/MovieSearchBar";
 import { fetchMovieDetails, fetchMovies } from "../services/movieApi";
 import { saveToStorage, loadFromStorage } from "../utils/storage";
 import styles from "../styles/globalStyles";
 
-const genres = [
+const GENRES = [
   "All",
   "Action",
   "Comedy",
@@ -55,62 +56,7 @@ export default function HomeScreen() {
     loadInitial();
   }, []);
 
-  const handleSearch = async (query, newPage = 1, isSearch = false) => {
-    if (isSearch || newPage === 1) setInitialLoading(true);
-    else setPaginationLoading(true);
-    if (isSearch) setLoadingSearch(true);
-
-    try {
-      const searchQuery = query === "all" ? "movie" : query.toLowerCase();
-      const response = await fetchMovies(searchQuery, newPage);
-
-      if (response.Response === "True") {
-        const detailedMovies = await Promise.all(
-          response.Search.map(async (movie) => {
-            const fullDetails = await fetchMovieDetails(movie.imdbID);
-            return fullDetails.Response === "True" ? { ...fullDetails } : null;
-          })
-        );
-
-        const validMovies = detailedMovies.filter(Boolean);
-        const newMovies = removeDuplicates(
-          newPage === 1 ? validMovies : [...movies, ...validMovies]
-        );
-
-        await new Promise((resolve) => setTimeout(resolve, 500));
-        setMovies(newMovies);
-        setHasMore(response.Search.length === 10);
-        pageRef.current = newPage;
-        if (isSearch) Keyboard.dismiss();
-      } else {
-        if (newPage === 1) setMovies([]);
-        setHasMore(false);
-      }
-    } catch (error) {
-      console.error("Error fetching:", error);
-    } finally {
-      setInitialLoading(false);
-      setPaginationLoading(false);
-      if (isSearch) setLoadingSearch(false);
-    }
-  };
-
-  // ✅ Debounced wrapper to prevent rapid search
-  const debouncedSearch = useCallback(
-    debounce((text) => {
-      handleSearch(text, 1, true);
-    }, 500),
-    []
-  );
-
-  const handleLoadMore = () => {
-    if (!paginationLoading && hasMore && randomQuery) {
-      const nextPage = pageRef.current + 1;
-      handleSearch(randomQuery, nextPage, false);
-    }
-  };
-
-  const removeDuplicates = (movieArray) => {
+  const removeDuplicates = useCallback((movieArray) => {
     const seen = new Set();
     return movieArray.filter((movie) => {
       const id = String(movie.imdbID);
@@ -118,21 +64,75 @@ export default function HomeScreen() {
       seen.add(id);
       return true;
     });
+  }, []);
+
+  const handleSearch = useCallback(
+    async (searchTerm, newPage = 1, isSearch = false) => {
+      if (isSearch || newPage === 1) setInitialLoading(true);
+      else setPaginationLoading(true);
+      if (isSearch) setLoadingSearch(true);
+
+      try {
+        const keyword =
+          searchTerm === "all" ? "movie" : searchTerm.toLowerCase();
+        const response = await fetchMovies(keyword, newPage);
+
+        if (response.Response === "True") {
+          const detailed = await Promise.all(
+            response.Search.map(async (m) => {
+              const details = await fetchMovieDetails(m.imdbID);
+              return details.Response === "True" ? details : null;
+            })
+          );
+
+          const valid = detailed.filter(Boolean);
+          const newList = newPage === 1 ? valid : [...movies, ...valid];
+          setMovies(removeDuplicates(newList));
+          setHasMore(response.Search.length === 10);
+          pageRef.current = newPage;
+
+          if (isSearch) Keyboard.dismiss();
+        } else {
+          if (newPage === 1) setMovies([]);
+          setHasMore(false);
+        }
+      } catch (err) {
+        console.error("Fetch error:", err);
+      } finally {
+        setInitialLoading(false);
+        setPaginationLoading(false);
+        if (isSearch) setLoadingSearch(false);
+      }
+    },
+    [movies, removeDuplicates]
+  );
+
+  const debouncedSearch = useCallback(
+    debounce((text) => {
+      handleSearch(text, 1, true);
+    }, 500),
+    [handleSearch]
+  );
+
+  const handleLoadMore = () => {
+    if (!paginationLoading && hasMore && randomQuery) {
+      const nextPage = pageRef.current + 1;
+      handleSearch(randomQuery, nextPage);
+    }
   };
 
   const handleAddFavorite = async (imdbID) => {
-    const alreadyExists = favorites.some((fav) => fav.imdbID === imdbID);
-    if (alreadyExists) return;
+    if (favorites.some((f) => f.imdbID === imdbID)) return;
 
     try {
-      const fullDetails = await fetchMovieDetails(imdbID);
-      if (fullDetails?.Response !== "True") return;
+      const details = await fetchMovieDetails(imdbID);
+      if (details?.Response !== "True") return;
 
-      const updated = [...favorites, { ...fullDetails }];
+      const updated = [...favorites, details];
       setFavorites(updated);
       await saveToStorage("favorites", updated);
 
-      Toast.show(`${fullDetails.Title} added to favorites`, {
+      Toast.show(`${details.Title} added to favorites`, {
         duration: Toast.durations.SHORT,
         position: Toast.positions.BOTTOM,
       });
@@ -142,17 +142,16 @@ export default function HomeScreen() {
   };
 
   const handleAddWatchLater = async (imdbID) => {
-    const alreadyExists = watchLater.some((m) => m.imdbID === imdbID);
-    if (alreadyExists) return;
+    if (watchLater.some((w) => w.imdbID === imdbID)) return;
 
-    const fullDetails = await fetchMovieDetails(imdbID);
-    if (fullDetails?.Response !== "True") return;
+    const details = await fetchMovieDetails(imdbID);
+    if (details?.Response !== "True") return;
 
-    const updated = [...watchLater, { ...fullDetails }];
+    const updated = [...watchLater, details];
     setWatchLater(updated);
     await saveToStorage("watchLater", updated);
 
-    Toast.show(`${fullDetails.Title} added to Watch Later`, {
+    Toast.show(`${details.Title} added to Watch Later`, {
       duration: Toast.durations.SHORT,
       position: Toast.positions.BOTTOM,
     });
@@ -165,46 +164,50 @@ export default function HomeScreen() {
           (m.Genre || "").toLowerCase().includes(selectedGenre.toLowerCase())
         );
 
+  const renderGenres = () => (
+    <ScrollView
+      horizontal
+      showsHorizontalScrollIndicator={false}
+      style={{ marginBottom: 10, flexGrow: "unset", flexShrink: "unset" }}
+    >
+      {GENRES.map((genre) => (
+        <TouchableOpacity
+          key={genre}
+          onPress={() => {
+            setSelectedGenre(genre);
+            handleSearch(genre.toLowerCase(), 1, true);
+          }}
+          style={{
+            backgroundColor: selectedGenre === genre ? "#cc0000" : "#eee",
+            paddingVertical: 6,
+            paddingHorizontal: 12,
+            borderRadius: 8,
+            marginRight: 10,
+          }}
+        >
+          <Text
+            style={{
+              color: selectedGenre === genre ? "#fff" : "#333",
+              fontWeight: "bold",
+            }}
+          >
+            {genre}
+          </Text>
+        </TouchableOpacity>
+      ))}
+    </ScrollView>
+  );
+
   return (
     <View style={styles.homeContainer}>
       <MovieSearchBar
         query={query}
         setQuery={setQuery}
-        onSearch={debouncedSearch} // ✅ pass debounced function
+        onSearch={debouncedSearch}
         loading={loadingSearch}
       />
 
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        style={{ marginBottom: 10, flexGrow: "unset", flexShrink: "unset" }}
-      >
-        {genres.map((genre) => (
-          <TouchableOpacity
-            key={genre}
-            onPress={() => {
-              setSelectedGenre(genre);
-              handleSearch(genre.toLowerCase(), 1, true);
-            }}
-            style={{
-              backgroundColor: selectedGenre === genre ? "#cc0000" : "#eee",
-              paddingVertical: 6,
-              paddingHorizontal: 12,
-              borderRadius: 8,
-              marginRight: 10,
-            }}
-          >
-            <Text
-              style={{
-                color: selectedGenre === genre ? "#fff" : "#333",
-                fontWeight: "bold",
-              }}
-            >
-              {genre}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </ScrollView>
+      {renderGenres()}
 
       {initialLoading ? (
         <View style={styles.spinnerContainer}>

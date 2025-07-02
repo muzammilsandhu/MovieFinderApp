@@ -18,7 +18,7 @@ export default function MovieSearchBar({ query, setQuery, onSearch, loading }) {
         value={query}
         onChangeText={(text) => {
           setQuery(text);
-          onSearch(text); // ✅ Now debounced
+          onSearch(text);
         }}
       />
       {query.length > 0 && (

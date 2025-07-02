@@ -1,14 +1,39 @@
 import { NavigationContainer, DarkTheme } from "@react-navigation/native";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
+import { Ionicons } from "@expo/vector-icons";
+
 import HomeScreen from "../screens/HomeScreen";
 import FavoritesScreen from "../screens/FavoritesScreen";
 import WatchLaterScreen from "../screens/WatchLaterScreen";
 import MovieDetailsScreen from "../screens/MovieDetailsScreen";
-import { Ionicons } from "@expo/vector-icons";
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
+
+const TAB_SCREENS = [
+  {
+    name: "Home",
+    component: HomeScreen,
+    icon: "home",
+  },
+  {
+    name: "Favorites",
+    component: FavoritesScreen,
+    icon: "heart",
+  },
+  {
+    name: "Watch Later",
+    component: WatchLaterScreen,
+    icon: "time",
+  },
+];
+
+const getTabScreenOptions = (iconName) => ({
+  tabBarIcon: ({ color, size }) => (
+    <Ionicons name={iconName} color={color} size={size} />
+  ),
+});
 
 function Tabs() {
   return (
@@ -21,36 +46,17 @@ function Tabs() {
           backgroundColor: "#141414",
           borderTopColor: "#333",
         },
-        tabBarPressColor: "transparent",
+        tabBarPressColor: "transparent", // removes ripple
       }}
     >
-      <Tab.Screen
-        name="Home"
-        component={HomeScreen}
-        options={{
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="home" color={color} size={size} />
-          ),
-        }}
-      />
-      <Tab.Screen
-        name="Favorites"
-        component={FavoritesScreen}
-        options={{
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="heart" color={color} size={size} />
-          ),
-        }}
-      />
-      <Tab.Screen
-        name="Watch Later"
-        component={WatchLaterScreen}
-        options={{
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="time" color={color} size={size} />
-          ),
-        }}
-      />
+      {TAB_SCREENS.map(({ name, component, icon }) => (
+        <Tab.Screen
+          key={name}
+          name={name}
+          component={component}
+          options={getTabScreenOptions(icon)}
+        />
+      ))}
     </Tab.Navigator>
   );
 }
@@ -69,9 +75,7 @@ export default function AppNavigator() {
           component={MovieDetailsScreen}
           options={{
             title: "Movie Details",
-            headerStyle: {
-              backgroundColor: "#141414",
-            },
+            headerStyle: { backgroundColor: "#141414" },
             headerTintColor: "#fff",
           }}
         />

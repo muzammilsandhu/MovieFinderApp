@@ -1,6 +1,7 @@
 import { useFocusEffect } from "@react-navigation/native";
 import { useCallback, useState } from "react";
 import { View } from "react-native";
+
 import MovieList from "../components/MovieList";
 import { loadFromStorage, saveToStorage } from "../utils/storage";
 import ConfirmModal from "../components/ConfirmModal";
