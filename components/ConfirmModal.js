@@ -1,4 +1,4 @@
-import { Modal, View, Text, TouchableOpacity, StyleSheet } from "react-native";
+import { Modal, View, Text, TouchableOpacity } from "react-native";
 import styles from "../styles/globalStyles";
 
 export default function ConfirmModal({
