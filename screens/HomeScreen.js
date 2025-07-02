@@ -1,3 +1,4 @@
+import { useFocusEffect } from "@react-navigation/native";
 import { useState, useEffect, useRef, useCallback } from "react";
 import {
   View,
@@ -55,6 +56,28 @@ export default function HomeScreen() {
     };
     loadInitial();
   }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      const reloadFavorites = async () => {
+        const favs = await loadFromStorage("favorites");
+        setFavorites(favs || []);
+      };
+      reloadFavorites();
+    }, [])
+  );
+
+  useFocusEffect(
+    useCallback(() => {
+      const reloadLists = async () => {
+        const favs = await loadFromStorage("favorites");
+        const watch = await loadFromStorage("watchLater");
+        setFavorites(favs || []);
+        setWatchLater(watch || []);
+      };
+      reloadLists();
+    }, [])
+  );
 
   const removeDuplicates = useCallback((movieArray) => {
     const seen = new Set();
@@ -122,17 +145,22 @@ export default function HomeScreen() {
   };
 
   const handleAddFavorite = async (imdbID) => {
-    if (favorites.some((f) => f.imdbID === imdbID)) return;
+    const alreadyExists = favorites.some((fav) => fav.imdbID === imdbID);
+    if (alreadyExists) return;
 
     try {
-      const details = await fetchMovieDetails(imdbID);
-      if (details?.Response !== "True") return;
+      const fullDetails = await fetchMovieDetails(imdbID);
+      if (fullDetails?.Response !== "True") return;
 
-      const updated = [...favorites, details];
+      const updated = [
+        ...favorites.filter((m) => m.imdbID !== imdbID),
+        fullDetails,
+      ];
+
       setFavorites(updated);
       await saveToStorage("favorites", updated);
 
-      Toast.show(`${details.Title} added to favorites`, {
+      Toast.show(`${fullDetails.Title} added to favorites`, {
         duration: Toast.durations.SHORT,
         position: Toast.positions.BOTTOM,
       });
