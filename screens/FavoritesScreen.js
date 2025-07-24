@@ -37,6 +37,19 @@ export default function FavoritesScreen() {
     setModalVisible(false);
   };
 
+  const toggleFavorite = async (movie) => {
+    const exists = favorites.find((m) => m.imdbID === movie.imdbID);
+    if (exists) {
+      const updated = favorites.filter((m) => m.imdbID !== movie.imdbID);
+      setFavorites(updated);
+      await saveToStorage("favorites", updated);
+    } else {
+      const updated = [...favorites, movie];
+      setFavorites(updated);
+      await saveToStorage("favorites", updated);
+    }
+  };
+
   return (
     <View style={styles.moviesContainer}>
       <MovieList
@@ -44,7 +57,7 @@ export default function FavoritesScreen() {
         loading={loading}
         error={favorites.length === 0 ? "No favorites yet." : ""}
         onEndReached={() => {}}
-        onFavorite={() => {}}
+        onFavorite={toggleFavorite}
         onWatchLater={() => {}}
         onRemove={confirmRemove}
         favorites={favorites}

@@ -37,6 +37,19 @@ export default function WatchLaterScreen() {
     setModalVisible(false);
   };
 
+  const toggleWatchLater = async (movie) => {
+    const exists = watchLater.find((m) => m.imdbID === movie.imdbID);
+    if (exists) {
+      const updated = watchLater.filter((m) => m.imdbID !== movie.imdbID);
+      setWatchLater(updated);
+      await saveToStorage("watchLater", updated);
+    } else {
+      const updated = [...watchLater, movie];
+      setWatchLater(updated);
+      await saveToStorage("watchLater", updated);
+    }
+  };
+
   return (
     <View style={styles.moviesContainer}>
       <MovieList
@@ -45,7 +58,7 @@ export default function WatchLaterScreen() {
         error={watchLater.length === 0 ? "No movies in watch later list." : ""}
         onEndReached={() => {}}
         onFavorite={() => {}}
-        onWatchLater={() => {}}
+        onWatchLater={toggleWatchLater}
         onRemove={confirmRemove}
         watchLater={watchLater}
       />

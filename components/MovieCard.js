@@ -48,7 +48,7 @@ export default function MovieCard({
           <View style={styles.actions}>
             {onFavorite && (
               <TouchableOpacity
-                onPress={() => onFavorite(movie.imdbID)}
+                onPress={() => onFavorite(movie)}
                 style={styles.actionButton}
               >
                 <Ionicons
@@ -60,7 +60,7 @@ export default function MovieCard({
             )}
             {onWatchLater && (
               <TouchableOpacity
-                onPress={() => onWatchLater(movie.imdbID)}
+                onPress={() => onWatchLater(movie)}
                 style={styles.actionButton}
               >
                 <Ionicons

@@ -144,45 +144,54 @@ export default function HomeScreen() {
     }
   };
 
-  const handleAddFavorite = async (imdbID) => {
-    const alreadyExists = favorites.some((fav) => fav.imdbID === imdbID);
-    if (alreadyExists) return;
+  const handleAddFavorite = async (movie) => {
+    const exists = favorites.some((fav) => fav.imdbID === movie.imdbID);
 
-    try {
-      const fullDetails = await fetchMovieDetails(imdbID);
-      if (fullDetails?.Response !== "True") return;
-
-      const updated = [
-        ...favorites.filter((m) => m.imdbID !== imdbID),
-        fullDetails,
-      ];
-
-      setFavorites(updated);
-      await saveToStorage("favorites", updated);
+    let updated;
+    if (exists) {
+      updated = favorites.filter((fav) => fav.imdbID !== movie.imdbID);
+      Toast.show(`${movie.Title} removed from favorites`, {
+        duration: Toast.durations.SHORT,
+        position: Toast.positions.BOTTOM,
+      });
+    } else {
+      const fullDetails = await fetchMovieDetails(movie.imdbID);
+      if (!fullDetails || fullDetails.Response !== "True") return;
+      updated = [...favorites, fullDetails];
 
       Toast.show(`${fullDetails.Title} added to favorites`, {
         duration: Toast.durations.SHORT,
         position: Toast.positions.BOTTOM,
       });
-    } catch (err) {
-      console.log("Favorite error:", err);
     }
+
+    setFavorites(updated);
+    await saveToStorage("favorites", updated);
   };
 
-  const handleAddWatchLater = async (imdbID) => {
-    if (watchLater.some((w) => w.imdbID === imdbID)) return;
+  const handleAddWatchLater = async (movie) => {
+    const exists = watchLater.some((w) => w.imdbID === movie.imdbID);
 
-    const details = await fetchMovieDetails(imdbID);
-    if (details?.Response !== "True") return;
+    let updated;
+    if (exists) {
+      updated = watchLater.filter((w) => w.imdbID !== movie.imdbID);
+      Toast.show(`${movie.Title} removed from Watch Later`, {
+        duration: Toast.durations.SHORT,
+        position: Toast.positions.BOTTOM,
+      });
+    } else {
+      const fullDetails = await fetchMovieDetails(movie.imdbID);
+      if (!fullDetails || fullDetails.Response !== "True") return;
+      updated = [...watchLater, fullDetails];
 
-    const updated = [...watchLater, details];
+      Toast.show(`${fullDetails.Title} added to Watch Later`, {
+        duration: Toast.durations.SHORT,
+        position: Toast.positions.BOTTOM,
+      });
+    }
+
     setWatchLater(updated);
     await saveToStorage("watchLater", updated);
-
-    Toast.show(`${details.Title} added to Watch Later`, {
-      duration: Toast.durations.SHORT,
-      position: Toast.positions.BOTTOM,
-    });
   };
 
   const filteredMovies =
