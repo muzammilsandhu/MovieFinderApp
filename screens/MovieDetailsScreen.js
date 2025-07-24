@@ -17,16 +17,13 @@ export default function MovieDetailsScreen({ route }) {
   const { movie } = route.params;
   const insets = useSafeAreaInsets();
 
-  // Function to handle play button click and redirect to Bilibili TV search page
   const handlePlay = () => {
-    // Construct the Bilibili TV search URL based on the movie title
     const movieTitleFormatted = movie.Title.toLowerCase().replace(
       /\s+/g,
       "%20"
     );
     const bilibiliSearchUrl = `https://www.bilibili.tv/en/search-result?q=${movieTitleFormatted}`;
 
-    // Open the URL in the default browser or Bilibili app
     Linking.openURL(bilibiliSearchUrl).catch((err) =>
       console.error("Failed to open Bilibili TV search:", err)
     );

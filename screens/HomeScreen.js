@@ -10,7 +10,6 @@ import {
 } from "react-native";
 import Toast from "react-native-root-toast";
 import debounce from "lodash/debounce";
-
 import MovieList from "../components/MovieList";
 import MovieSearchBar from "../components/MovieSearchBar";
 import { fetchMovieDetails, fetchMovies } from "../services/movieApi";
@@ -42,6 +41,8 @@ export default function HomeScreen() {
   const [selectedGenre, setSelectedGenre] = useState("All");
   const [query, setQuery] = useState("");
   const [loadingSearch, setLoadingSearch] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+  const [error, setError] = useState(null); // Add error state
 
   useEffect(() => {
     const loadInitial = async () => {
@@ -91,9 +92,13 @@ export default function HomeScreen() {
 
   const handleSearch = useCallback(
     async (searchTerm, newPage = 1, isSearch = false) => {
+      console.log(
+        `handleSearch: term=${searchTerm}, page=${newPage}, isSearch=${isSearch}`
+      );
       if (isSearch || newPage === 1) setInitialLoading(true);
       else setPaginationLoading(true);
       if (isSearch) setLoadingSearch(true);
+      setError(null); // Clear previous errors
 
       try {
         const keyword =
@@ -115,12 +120,20 @@ export default function HomeScreen() {
           pageRef.current = newPage;
 
           if (isSearch) Keyboard.dismiss();
+          console.log(
+            `handleSearch: fetched ${valid.length} movies, hasMore=${
+              response.Search.length === 10
+            }`
+          );
         } else {
           if (newPage === 1) setMovies([]);
           setHasMore(false);
+          setError(response.Error || "No movies found for this query");
+          console.log(`handleSearch: no results, error=${response.Error}`);
         }
       } catch (err) {
         console.error("Fetch error:", err);
+        setError("Failed to fetch movies. Please try again.");
       } finally {
         setInitialLoading(false);
         setPaginationLoading(false);
@@ -140,6 +153,7 @@ export default function HomeScreen() {
   const handleLoadMore = () => {
     if (!paginationLoading && hasMore && randomQuery) {
       const nextPage = pageRef.current + 1;
+      console.log(`handleLoadMore: loading page ${nextPage}`);
       handleSearch(randomQuery, nextPage);
     }
   };
@@ -192,6 +206,15 @@ export default function HomeScreen() {
 
     setWatchLater(updated);
     await saveToStorage("watchLater", updated);
+  };
+
+  const handleRefresh = async () => {
+    console.log("handleRefresh: starting refresh");
+    setRefreshing(true);
+    pageRef.current = 1;
+    await handleSearch(randomQuery || "movie", 1, true);
+    setRefreshing(false);
+    console.log("handleRefresh: completed");
   };
 
   const filteredMovies =
@@ -260,9 +283,12 @@ export default function HomeScreen() {
           favorites={favorites}
           watchLater={watchLater}
           loading={paginationLoading}
+          error={error} // Pass error state
           onEndReached={handleLoadMore}
           onFavorite={handleAddFavorite}
           onWatchLater={handleAddWatchLater}
+          refreshing={refreshing}
+          onRefresh={handleRefresh}
         />
       )}
     </View>

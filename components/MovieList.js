@@ -1,4 +1,10 @@
-import { FlatList, Text, ActivityIndicator, View } from "react-native";
+import {
+  FlatList,
+  Text,
+  ActivityIndicator,
+  View,
+  RefreshControl,
+} from "react-native";
 import { useRef } from "react";
 import MovieCard from "./MovieCard";
 import styles from "../styles/globalStyles";
@@ -13,6 +19,8 @@ export default function MovieList({
   onFavorite = () => {},
   onWatchLater = () => {},
   onRemove,
+  refreshing = false,
+  onRefresh = () => {},
 }) {
   const canCallOnEndReached = useRef(true);
 
@@ -53,6 +61,15 @@ export default function MovieList({
             <Text style={styles.empty}>No movies found</Text>
           ) : null
         }
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={["#cc0000"]}
+            tintColor="#cc0000"
+          />
+        }
+        contentContainerStyle={styles.movieListContainer} // Ensure scrollable
       />
     </View>
   );
