@@ -1,4 +1,12 @@
-import { View, Text, Image, ScrollView } from "react-native";
+import { useState, useEffect } from "react";
+import {
+  View,
+  Text,
+  Image,
+  ScrollView,
+  TouchableOpacity,
+  Linking,
+} from "react-native";
 import {
   SafeAreaView,
   useSafeAreaInsets,
@@ -9,10 +17,24 @@ export default function MovieDetailsScreen({ route }) {
   const { movie } = route.params;
   const insets = useSafeAreaInsets();
 
+  // Function to handle play button click and redirect to Bilibili TV search page
+  const handlePlay = () => {
+    // Construct the Bilibili TV search URL based on the movie title
+    const movieTitleFormatted = movie.Title.toLowerCase().replace(
+      /\s+/g,
+      "%20"
+    );
+    const bilibiliSearchUrl = `https://www.bilibili.tv/en/search-result?q=${movieTitleFormatted}`;
+
+    // Open the URL in the default browser or Bilibili app
+    Linking.openURL(bilibiliSearchUrl).catch((err) =>
+      console.error("Failed to open Bilibili TV search:", err)
+    );
+  };
+
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: "#000" }}>
+    <SafeAreaView style={{ backgroundColor: "#000" }}>
       <ScrollView
-        style={styles.container}
         contentContainerStyle={{
           paddingBottom: insets.bottom + 20,
         }}
@@ -53,6 +75,10 @@ export default function MovieDetailsScreen({ route }) {
 
           <Text style={styles.plot}>Plot</Text>
           <Text style={styles.plot}>{movie.Plot}</Text>
+
+          <TouchableOpacity style={styles.playButton} onPress={handlePlay}>
+            <Text style={styles.playButtonText}>Play Movie</Text>
+          </TouchableOpacity>
         </View>
       </ScrollView>
     </SafeAreaView>

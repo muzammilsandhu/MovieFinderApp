@@ -46,7 +46,7 @@ function Tabs() {
           backgroundColor: "#141414",
           borderTopColor: "#333",
         },
-        tabBarPressColor: "transparent", // removes ripple
+        tabBarPressColor: "transparent",
       }}
     >
       {TAB_SCREENS.map(({ name, component, icon }) => (
@@ -77,6 +77,7 @@ export default function AppNavigator() {
             title: "Movie Details",
             headerStyle: { backgroundColor: "#141414" },
             headerTintColor: "#fff",
+            tabBarStyle: { display: "none" },
           }}
         />
       </Stack.Navigator>

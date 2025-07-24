@@ -125,7 +125,6 @@ export default StyleSheet.create({
   },
   detailsContainer: {
     paddingHorizontal: 16,
-    paddingBottom: 30,
   },
   detailsTitle: {
     fontSize: 24,
@@ -163,5 +162,19 @@ export default StyleSheet.create({
     fontSize: 15,
     lineHeight: 22,
     color: theme.textSecondary,
+  },
+  playButton: {
+    backgroundColor: "#cc0000",
+    paddingVertical: 12,
+    paddingHorizontal: 25,
+    borderRadius: 10,
+    marginTop: 20,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  playButtonText: {
+    color: "#fff",
+    fontSize: 18,
+    fontWeight: "bold",
   },
 });
