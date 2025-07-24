@@ -29,6 +29,20 @@ const GENRES = [
   "Fantasy",
 ];
 
+// List of random, non-genre-specific keywords (years, decades, general terms)
+const RANDOM_KEYWORDS = [
+  "film",
+  "cinema",
+  "movies 1980",
+  "movies 1990",
+  "movies 2000",
+  "movies 2010",
+  "classic",
+  "recent",
+  "blockbuster",
+  "independent",
+];
+
 export default function HomeScreen() {
   const pageRef = useRef(1);
   const [movies, setMovies] = useState([]);
@@ -42,7 +56,15 @@ export default function HomeScreen() {
   const [query, setQuery] = useState("");
   const [loadingSearch, setLoadingSearch] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
-  const [error, setError] = useState(null); // Add error state
+  const [error, setError] = useState(null);
+
+  // Function to pick a random non-genre-specific keyword
+  const getRandomKeyword = useCallback(() => {
+    const randomIndex = Math.floor(Math.random() * RANDOM_KEYWORDS.length);
+    const keyword = RANDOM_KEYWORDS[randomIndex].toLowerCase();
+    console.log(`getRandomKeyword: selected ${keyword}`);
+    return keyword;
+  }, []);
 
   useEffect(() => {
     const loadInitial = async () => {
@@ -51,12 +73,12 @@ export default function HomeScreen() {
       setFavorites(favs || []);
       setWatchLater(watch || []);
 
-      const keyword = "movie";
+      const keyword = getRandomKeyword();
       setRandomQuery(keyword);
       handleSearch(keyword, 1, false);
     };
     loadInitial();
-  }, []);
+  }, [getRandomKeyword]);
 
   useFocusEffect(
     useCallback(() => {
@@ -98,11 +120,10 @@ export default function HomeScreen() {
       if (isSearch || newPage === 1) setInitialLoading(true);
       else setPaginationLoading(true);
       if (isSearch) setLoadingSearch(true);
-      setError(null); // Clear previous errors
+      setError(null);
 
       try {
-        const keyword =
-          searchTerm === "all" ? "movie" : searchTerm.toLowerCase();
+        const keyword = searchTerm.toLowerCase(); // Use the provided term directly
         const response = await fetchMovies(keyword, newPage);
 
         if (response.Response === "True") {
@@ -212,9 +233,13 @@ export default function HomeScreen() {
     console.log("handleRefresh: starting refresh");
     setRefreshing(true);
     pageRef.current = 1;
-    await handleSearch(randomQuery || "movie", 1, true);
+    setMovies([]); // Clear current movies
+    const newKeyword = getRandomKeyword(); // Get new random non-genre-specific keyword
+    setRandomQuery(newKeyword);
+    setSelectedGenre("All"); // Reset genre to avoid filtering
+    await handleSearch(newKeyword, 1, true);
     setRefreshing(false);
-    console.log("handleRefresh: completed");
+    console.log(`handleRefresh: completed with keyword=${newKeyword}`);
   };
 
   const filteredMovies =
@@ -235,6 +260,7 @@ export default function HomeScreen() {
           key={genre}
           onPress={() => {
             setSelectedGenre(genre);
+            setRandomQuery(genre.toLowerCase()); // Update for consistency
             handleSearch(genre.toLowerCase(), 1, true);
           }}
           style={{
@@ -283,7 +309,7 @@ export default function HomeScreen() {
           favorites={favorites}
           watchLater={watchLater}
           loading={paginationLoading}
-          error={error} // Pass error state
+          error={error}
           onEndReached={handleLoadMore}
           onFavorite={handleAddFavorite}
           onWatchLater={handleAddWatchLater}
