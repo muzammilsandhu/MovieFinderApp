@@ -2,7 +2,6 @@ import { useFocusEffect } from "@react-navigation/native";
 import { useCallback, useState } from "react";
 import { View } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-
 import MovieList from "../components/MovieList";
 import ConfirmModal from "../components/ConfirmModal";
 import styles from "../styles/globalStyles";
@@ -25,28 +24,28 @@ export default function WatchLaterScreen() {
     }, [])
   );
 
-  const confirmRemove = (imdbID) => {
-    setSelectedID(imdbID);
+  const confirmRemove = (id) => {
+    setSelectedID(id);
     setModalVisible(true);
   };
 
   const handleRemove = async () => {
-    const updated = watchLater.filter((m) => m.imdbID !== selectedID);
+    const updated = watchLater.filter((m) => m.id !== selectedID);
     await AsyncStorage.setItem("watchLater", JSON.stringify(updated));
     setWatchLater(updated);
     setModalVisible(false);
   };
 
   const toggleWatchLater = async (movie) => {
-    const exists = watchLater.find((m) => m.imdbID === movie.imdbID);
+    const exists = watchLater.find((m) => m.id === movie.id);
     if (exists) {
-      const updated = watchLater.filter((m) => m.imdbID !== movie.imdbID);
+      const updated = watchLater.filter((m) => m.id !== movie.id);
       setWatchLater(updated);
-      await saveToStorage("watchLater", updated);
+      await AsyncStorage.setItem("watchLater", JSON.stringify(updated));
     } else {
       const updated = [...watchLater, movie];
       setWatchLater(updated);
-      await saveToStorage("watchLater", updated);
+      await AsyncStorage.setItem("watchLater", JSON.stringify(updated));
     }
   };
 

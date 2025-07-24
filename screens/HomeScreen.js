@@ -29,14 +29,10 @@ const GENRES = [
   "Fantasy",
 ];
 
-// List of random, non-genre-specific keywords (years, decades, general terms)
 const RANDOM_KEYWORDS = [
+  "movie",
   "film",
   "cinema",
-  "movies 1980",
-  "movies 1990",
-  "movies 2000",
-  "movies 2010",
   "classic",
   "recent",
   "blockbuster",
@@ -58,7 +54,6 @@ export default function HomeScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState(null);
 
-  // Function to pick a random non-genre-specific keyword
   const getRandomKeyword = useCallback(() => {
     const randomIndex = Math.floor(Math.random() * RANDOM_KEYWORDS.length);
     const keyword = RANDOM_KEYWORDS[randomIndex].toLowerCase();
@@ -105,7 +100,7 @@ export default function HomeScreen() {
   const removeDuplicates = useCallback((movieArray) => {
     const seen = new Set();
     return movieArray.filter((movie) => {
-      const id = String(movie.imdbID);
+      const id = String(movie.id);
       if (seen.has(id)) return false;
       seen.add(id);
       return true;
@@ -123,34 +118,55 @@ export default function HomeScreen() {
       setError(null);
 
       try {
-        const keyword = searchTerm.toLowerCase(); // Use the provided term directly
+        const keyword = searchTerm.toLowerCase();
         const response = await fetchMovies(keyword, newPage);
+        console.log("Raw Search Response:", response);
 
-        if (response.Response === "True") {
+        if (response.results && response.results.length > 0) {
           const detailed = await Promise.all(
-            response.Search.map(async (m) => {
-              const details = await fetchMovieDetails(m.imdbID);
-              return details.Response === "True" ? details : null;
+            response.results.map(async (m) => {
+              try {
+                const details = await fetchMovieDetails(m.id);
+                console.log("Detailed Response for ID:", m.id, details);
+                return details && details.id
+                  ? {
+                      ...details,
+                      title: details.title || `Movie (${details.id})`,
+                    }
+                  : null;
+              } catch (detailError) {
+                console.error(
+                  "Error fetching details for ID:",
+                  m.id,
+                  detailError
+                );
+                return null;
+              }
             })
           );
 
-          const valid = detailed.filter(Boolean);
+          const valid = detailed.filter((m) => m && m.id !== undefined);
+          if (valid.length === 0 && newPage === 1) {
+            setError("No valid movies found for this query");
+          }
           const newList = newPage === 1 ? valid : [...movies, ...valid];
           setMovies(removeDuplicates(newList));
-          setHasMore(response.Search.length === 10);
+          setHasMore(response.results.length === 20);
           pageRef.current = newPage;
 
           if (isSearch) Keyboard.dismiss();
           console.log(
             `handleSearch: fetched ${valid.length} movies, hasMore=${
-              response.Search.length === 10
+              response.results.length === 20
             }`
           );
         } else {
           if (newPage === 1) setMovies([]);
           setHasMore(false);
-          setError(response.Error || "No movies found for this query");
-          console.log(`handleSearch: no results, error=${response.Error}`);
+          setError(response.status_message || "No movies found for this query");
+          console.log(
+            `handleSearch: no results, error=${response.status_message}`
+          );
         }
       } catch (err) {
         console.error("Fetch error:", err);
@@ -180,21 +196,21 @@ export default function HomeScreen() {
   };
 
   const handleAddFavorite = async (movie) => {
-    const exists = favorites.some((fav) => fav.imdbID === movie.imdbID);
+    const exists = favorites.some((fav) => fav.id === movie.id);
 
     let updated;
     if (exists) {
-      updated = favorites.filter((fav) => fav.imdbID !== movie.imdbID);
-      Toast.show(`${movie.Title} removed from favorites`, {
+      updated = favorites.filter((fav) => fav.id !== movie.id);
+      Toast.show(`${movie.title} removed from favorites`, {
         duration: Toast.durations.SHORT,
         position: Toast.positions.BOTTOM,
       });
     } else {
-      const fullDetails = await fetchMovieDetails(movie.imdbID);
-      if (!fullDetails || fullDetails.Response !== "True") return;
+      const fullDetails = await fetchMovieDetails(movie.id);
+      if (!fullDetails) return;
       updated = [...favorites, fullDetails];
 
-      Toast.show(`${fullDetails.Title} added to favorites`, {
+      Toast.show(`${fullDetails.title} added to favorites`, {
         duration: Toast.durations.SHORT,
         position: Toast.positions.BOTTOM,
       });
@@ -205,21 +221,21 @@ export default function HomeScreen() {
   };
 
   const handleAddWatchLater = async (movie) => {
-    const exists = watchLater.some((w) => w.imdbID === movie.imdbID);
+    const exists = watchLater.some((w) => w.id === movie.id);
 
     let updated;
     if (exists) {
-      updated = watchLater.filter((w) => w.imdbID !== movie.imdbID);
-      Toast.show(`${movie.Title} removed from Watch Later`, {
+      updated = watchLater.filter((w) => w.id !== movie.id);
+      Toast.show(`${movie.title} removed from Watch Later`, {
         duration: Toast.durations.SHORT,
         position: Toast.positions.BOTTOM,
       });
     } else {
-      const fullDetails = await fetchMovieDetails(movie.imdbID);
-      if (!fullDetails || fullDetails.Response !== "True") return;
+      const fullDetails = await fetchMovieDetails(movie.id);
+      if (!fullDetails) return;
       updated = [...watchLater, fullDetails];
 
-      Toast.show(`${fullDetails.Title} added to Watch Later`, {
+      Toast.show(`${fullDetails.title} added to Watch Later`, {
         duration: Toast.durations.SHORT,
         position: Toast.positions.BOTTOM,
       });
@@ -233,10 +249,10 @@ export default function HomeScreen() {
     console.log("handleRefresh: starting refresh");
     setRefreshing(true);
     pageRef.current = 1;
-    setMovies([]); // Clear current movies
-    const newKeyword = getRandomKeyword(); // Get new random non-genre-specific keyword
+    setMovies([]);
+    const newKeyword = getRandomKeyword();
     setRandomQuery(newKeyword);
-    setSelectedGenre("All"); // Reset genre to avoid filtering
+    setSelectedGenre("All");
     await handleSearch(newKeyword, 1, true);
     setRefreshing(false);
     console.log(`handleRefresh: completed with keyword=${newKeyword}`);
@@ -246,7 +262,9 @@ export default function HomeScreen() {
     selectedGenre === "All"
       ? movies
       : movies.filter((m) =>
-          (m.Genre || "").toLowerCase().includes(selectedGenre.toLowerCase())
+          (m.genres?.map((g) => g.name).join(", ") || "")
+            .toLowerCase()
+            .includes(selectedGenre.toLowerCase())
         );
 
   const renderGenres = () => (
@@ -260,7 +278,7 @@ export default function HomeScreen() {
           key={genre}
           onPress={() => {
             setSelectedGenre(genre);
-            setRandomQuery(genre.toLowerCase()); // Update for consistency
+            setRandomQuery(genre.toLowerCase());
             handleSearch(genre.toLowerCase(), 1, true);
           }}
           style={{

@@ -1,7 +1,6 @@
 import { useFocusEffect } from "@react-navigation/native";
 import { useCallback, useState } from "react";
 import { View } from "react-native";
-
 import MovieList from "../components/MovieList";
 import { loadFromStorage, saveToStorage } from "../utils/storage";
 import ConfirmModal from "../components/ConfirmModal";
@@ -25,22 +24,22 @@ export default function FavoritesScreen() {
     }, [])
   );
 
-  const confirmRemove = (imdbID) => {
-    setSelectedID(imdbID);
+  const confirmRemove = (id) => {
+    setSelectedID(id);
     setModalVisible(true);
   };
 
   const handleRemove = async () => {
-    const updated = favorites.filter((m) => m.imdbID !== selectedID);
+    const updated = favorites.filter((m) => m.id !== selectedID);
     await saveToStorage("favorites", updated);
     setFavorites(updated);
     setModalVisible(false);
   };
 
   const toggleFavorite = async (movie) => {
-    const exists = favorites.find((m) => m.imdbID === movie.imdbID);
+    const exists = favorites.find((m) => m.id === movie.id);
     if (exists) {
-      const updated = favorites.filter((m) => m.imdbID !== movie.imdbID);
+      const updated = favorites.filter((m) => m.id !== movie.id);
       setFavorites(updated);
       await saveToStorage("favorites", updated);
     } else {

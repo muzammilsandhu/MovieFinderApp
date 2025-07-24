@@ -13,7 +13,7 @@ export const loadFromStorage = async (key) => {
     const value = await AsyncStorage.getItem(key);
     return value ? JSON.parse(value) : [];
   } catch (error) {
-    console.log(`Error loading ${key}: `, error);
+    console.log(`Error loading ${key}:`, error);
     return [];
   }
 };

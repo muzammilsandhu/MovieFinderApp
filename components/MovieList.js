@@ -40,12 +40,14 @@ export default function MovieList({
 
       <FlatList
         data={movies}
-        keyExtractor={(movie) => movie.imdbID}
+        keyExtractor={(movie) =>
+          movie.id ? movie.id.toString() : Math.random().toString()
+        }
         renderItem={({ item }) => (
           <MovieCard
             movie={item}
-            isFavorite={favorites?.some((m) => m.imdbID === item.imdbID)}
-            isWatchLater={watchLater?.some((m) => m.imdbID === item.imdbID)}
+            isFavorite={favorites?.some((m) => m.id === item.id)}
+            isWatchLater={watchLater?.some((m) => m.id === item.id)}
             onFavorite={onFavorite}
             onWatchLater={onWatchLater}
             {...(onRemove && { onRemove })}
@@ -69,7 +71,7 @@ export default function MovieList({
             tintColor="#cc0000"
           />
         }
-        contentContainerStyle={styles.movieListContainer} // Ensure scrollable
+        contentContainerStyle={styles.movieListContainer}
       />
     </View>
   );

@@ -26,10 +26,9 @@ export default function MovieCard({
       <View style={styles.card}>
         <Image
           source={{
-            uri:
-              movie.Poster !== "N/A"
-                ? movie.Poster
-                : "https://via.placeholder.com/100x150",
+            uri: movie.poster_path
+              ? `https://image.tmdb.org/t/p/w500${movie.poster_path}`
+              : "https://via.placeholder.com/100x150",
           }}
           style={styles.poster}
         />
@@ -38,13 +37,14 @@ export default function MovieCard({
           <TouchableOpacity
             onPress={() => navigation.navigate("MovieDetails", { movie })}
           >
-            <Text style={styles.title}>{movie.Title}</Text>
+            <Text style={styles.title}>{movie.title || "Unknown Title"}</Text>
           </TouchableOpacity>
-          <Text style={styles.year}>{movie.Year}</Text>
-          <Text numberOfLines={4} style={styles.plot}>
-            {movie.Plot || "No description available."}
+          <Text style={styles.year}>
+            {movie.release_date?.split("-")[0] || "N/A"}
           </Text>
-
+          <Text numberOfLines={4} style={styles.plot}>
+            {movie.overview || "No description available."}
+          </Text>
           <View style={styles.actions}>
             {onFavorite && (
               <TouchableOpacity
@@ -72,7 +72,7 @@ export default function MovieCard({
             )}
             {onRemove && (
               <TouchableOpacity
-                onPress={() => onRemove(movie.imdbID)}
+                onPress={() => onRemove(movie.id)}
                 style={styles.actionButton}
               >
                 <Ionicons name="trash-outline" size={24} color="#d11a2a" />
