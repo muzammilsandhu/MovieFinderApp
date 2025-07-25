@@ -1,10 +1,6 @@
-import {
-  ScrollView,
-  TouchableOpacity,
-  Text,
-  StyleSheet,
-  View,
-} from "react-native";
+import { View, TouchableOpacity, Text, ScrollView } from "react-native";
+import styles from "../styles/globalStyles";
+import { Picker } from "@react-native-picker/picker";
 
 const SORT_OPTIONS = [
   { label: "Popular", value: "popularity.desc" },
@@ -13,76 +9,105 @@ const SORT_OPTIONS = [
 ];
 
 export default function FilterBar({
-  genres,
   filters,
   setFilters,
-  availableYears = [],
+  genres,
+  availableYears,
+  setQuery,
 }) {
-  const handleGenre = (id) => {
-    setFilters((prev) => ({
-      ...prev,
-      genreId: prev.genreId === id ? null : id,
-    }));
-  };
-
-  const handleYear = (year) => {
-    setFilters((prev) => ({
-      ...prev,
-      year: prev.year === year ? null : year,
-    }));
-  };
-
-  const handleSort = (sortBy) => {
-    setFilters((prev) => ({
-      ...prev,
-      sortBy: prev.sortBy === sortBy ? "popularity.desc" : sortBy,
-    }));
+  const handleReset = () => {
+    setQuery("");
+    setFilters({
+      genreId: null,
+      year: null,
+      sortBy: "popularity.desc",
+    });
   };
 
   return (
     <ScrollView
       horizontal
       showsHorizontalScrollIndicator={false}
-      contentContainerStyle={styles.filterBarContainer}
+      contentContainerStyle={{
+        flexDirection: "row",
+        paddingHorizontal: 10,
+        gap: 10,
+      }}
+      style={{
+        marginBottom: 10,
+        flexGrow: "unset",
+        flexShrink: "unset",
+      }}
     >
-      {genres.map((genre) => (
-        <TouchableOpacity
-          key={genre.id}
-          style={[
-            styles.filterChip,
-            filters.genreId === genre.id && styles.filterChipSelected,
-          ]}
-          onPress={() => handleGenre(genre.id)}
+      <View style={styles.filterDropdown}>
+        <Picker
+          selectedValue={filters.year}
+          onValueChange={(value) =>
+            setFilters((prev) => ({ ...prev, year: value }))
+          }
+          dropdownIconColor="#fff"
+          style={styles.picker}
         >
-          <Text style={styles.filterChipText}>{genre.name}</Text>
-        </TouchableOpacity>
-      ))}
+          <Picker.Item label="Year" value={null} style={styles.pickerItem} />
+          {availableYears.map((year) => (
+            <Picker.Item
+              key={year}
+              label={String(year)}
+              value={year}
+              style={styles.pickerItem}
+              color="#fff"
+            />
+          ))}
+        </Picker>
+      </View>
 
-      {availableYears.map((year) => (
-        <TouchableOpacity
-          key={year}
-          style={[
-            styles.filterChip,
-            filters.year === year && styles.filterChipSelected,
-          ]}
-          onPress={() => handleYear(year)}
+      <View style={styles.filterDropdown}>
+        <Picker
+          selectedValue={filters.genreId}
+          onValueChange={(value) =>
+            setFilters((prev) => ({ ...prev, genreId: value }))
+          }
+          dropdownIconColor="#fff"
+          style={styles.picker}
         >
-          <Text style={styles.filterChipText}>{year}</Text>
-        </TouchableOpacity>
-      ))}
+          <Picker.Item label="Genre" value={null} style={styles.pickerItem} />
+          {genres.map((genre) => (
+            <Picker.Item
+              key={genre.id}
+              label={genre.name}
+              value={genre.id}
+              style={styles.pickerItem}
+              color="#fff"
+            />
+          ))}
+        </Picker>
+      </View>
 
-      {SORT_OPTIONS.map((option) => (
-        <TouchableOpacity
-          key={option.value}
-          style={[
-            styles.filterChip,
-            filters.sortBy === option.value && styles.filterChipSelected,
-          ]}
-          onPress={() => handleSort(option.value)}
+      <View style={styles.filterDropdown}>
+        <Picker
+          selectedValue={filters.sortBy}
+          onValueChange={(value) =>
+            setFilters((prev) => ({ ...prev, sortBy: value }))
+          }
+          dropdownIconColor="#fff"
+          style={styles.picker}
         >
-          <Text style={styles.filterChipText}>{option.label}</Text>
-        </TouchableOpacity>
-      ))}
+          <Picker.Item label="Sort By" value={null} style={styles.pickerItem} />
+          {SORT_OPTIONS.map((option) => (
+            <Picker.Item
+              key={option.value}
+              label={option.label}
+              value={option.value}
+              style={styles.pickerItem}
+              color="#fff"
+            />
+          ))}
+        </Picker>
+      </View>
+
+      <TouchableOpacity onPress={handleReset} style={styles.resetButton}>
+        <Text style={{ color: "#fff", fontWeight: "bold" }}>Reset</Text>
+      </TouchableOpacity>
     </ScrollView>
   );
 }

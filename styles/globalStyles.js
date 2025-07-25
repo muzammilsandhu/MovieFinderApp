@@ -179,22 +179,36 @@ export default StyleSheet.create({
   },
 
   //Filter Bar
-  FilterBarContainer: {
-    paddingVertical: 8,
-    paddingHorizontal: 10,
+  filterContainer: {
+    paddingTop: 10,
+    paddingBottom: 5,
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "space-between",
+    gap: 10,
   },
-  filterChip: {
+
+  filterDropdown: {
+    backgroundColor: "#1f1f1f",
+    minWidth: 140,
     backgroundColor: "#333",
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-    borderRadius: 20,
-    marginRight: 8,
+    borderRadius: 8,
+    overflow: "hidden",
+    height: 40,
+    justifyContent: "center",
   },
-  filterChipSelected: {
-    backgroundColor: "#cc0000",
+
+  pickerItem: {
+    color: "#b3b3b3",
+    backgroundColor: "#1f1f1f",
   },
-  filterChipText: {
-    color: "#fff",
-    fontSize: 14,
+
+  resetButton: {
+    backgroundColor: "#e50914",
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 8,
+    height: 40,
+    flex: 1,
   },
 });

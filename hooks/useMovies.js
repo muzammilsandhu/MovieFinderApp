@@ -13,47 +13,22 @@ import { loadFromStorage, saveToStorage } from "../utils/storage";
 export const useMovies = () => {
   const pageRef = useRef(1);
   const [movies, setMovies] = useState([]);
-  const [genres, setGenres] = useState([]);
   const [hasMore, setHasMore] = useState(true);
   const [query, setQuery] = useState("");
   const [initialLoading, setInitialLoading] = useState(false);
   const [paginationLoading, setPaginationLoading] = useState(false);
   const [loadingSearch, setLoadingSearch] = useState(false);
   const [error, setError] = useState(null);
-  const [selectedGenreId, setSelectedGenreId] = useState(null);
-  const [selectedYear, setSelectedYear] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
   const [filters, setFilters] = useState({
     genreId: null,
     year: null,
     sortBy: "popularity.desc",
   });
+  const [genres, setGenres] = useState([]);
+
   const { favorites, watchLater, toggleFavorite, toggleWatchLater } =
     useMovieContext();
-
-  const getRandomCriteria = useCallback(() => {
-    const validGenres = genres.filter((g) => g && g.id);
-
-    const currentYear = new Date().getFullYear();
-    const years = Array.from(
-      { length: currentYear - 1970 + 1 },
-      (_, i) => 1970 + i
-    );
-
-    const useGenre = validGenres.length > 0 && Math.random() > 0.4;
-    const useYear = Math.random() > 0.2;
-
-    const genreId = useGenre
-      ? validGenres[Math.floor(Math.random() * validGenres.length)].id
-      : null;
-
-    const year = useYear
-      ? years[Math.floor(Math.random() * years.length)]
-      : null;
-
-    console.log(`🎲 getRandomCriteria → genreId=${genreId}, year=${year}`);
-    return { genreId, year };
-  }, [genres]);
 
   const removeDuplicates = useCallback((movieArray) => {
     const seen = new Set();
@@ -87,63 +62,15 @@ export const useMovies = () => {
     loadInitial();
   }, []);
 
-  const handleSearch = useCallback(
-    async (searchTerm, newPage = 1, isSearch = false) => {
-      console.log(
-        `handleSearch: term=${searchTerm}, page=${newPage}, isSearch=${isSearch}`
-      );
-      if (isSearch || newPage === 1) setInitialLoading(true);
-      else setPaginationLoading(true);
-      if (isSearch) setLoadingSearch(true);
-      setError(null);
-
-      try {
-        const keyword = searchTerm.toLowerCase();
-        const response = await fetchMovies(keyword, newPage);
-        console.log("Search Response:", response);
-
-        if (response.results && response.results.length > 0) {
-          const valid = response.results.filter((m) => m && m.id);
-          if (valid.length === 0 && newPage === 1) {
-            setError("No valid movies found for this query");
-          }
-          const newList = newPage === 1 ? valid : [...movies, ...valid];
-          setMovies(removeDuplicates(newList));
-          setHasMore(response.results.length === 20);
-          pageRef.current = newPage;
-
-          if (isSearch) Keyboard.dismiss();
-          console.log(
-            `handleSearch: fetched ${valid.length} movies, hasMore=${
-              response.results.length === 20
-            }`
-          );
-        } else {
-          if (newPage === 1) setMovies([]);
-          setHasMore(false);
-          setError(response.status_message || "No movies found for this query");
-          console.log(
-            `handleSearch: no results, error=${response.status_message}`
-          );
-        }
-      } catch (err) {
-        console.error("Fetch error:", err);
-        setError("Failed to fetch movies. Please try again.");
-      } finally {
-        setInitialLoading(false);
-        setPaginationLoading(false);
-        if (isSearch) setLoadingSearch(false);
-      }
-    },
-    [movies, removeDuplicates]
-  );
+  useEffect(() => {
+    pageRef.current = 1;
+    setMovies([]);
+    handleDiscover(1);
+  }, [filters]);
 
   const handleDiscover = useCallback(
-    async (newPage = 1, isRefresh = false) => {
-      const { genreId, year } = getRandomCriteria();
-      console.log(
-        `handleDiscover: genreId=${genreId}, year=${year}, page=${newPage}, isRefresh=${isRefresh}`
-      );
+    async (newPage = 1) => {
+      const { genreId, year, sortBy } = filters;
 
       if (newPage === 1) setInitialLoading(true);
       else setPaginationLoading(true);
@@ -153,35 +80,56 @@ export const useMovies = () => {
         const response = await fetchDiscoverMovies({
           genreId,
           year,
+          sortBy,
           page: newPage,
         });
 
-        if (response.results && response.results.length > 0) {
-          const valid = response.results.filter((m) => m && m.id);
-          const newList = newPage === 1 ? valid : [...movies, ...valid];
-          setMovies(removeDuplicates(newList));
-          setHasMore(response.results.length === 20);
-          pageRef.current = newPage;
-        } else {
-          if (newPage === 1) setMovies([]);
-          setHasMore(false);
-          setError("No movies found for this criteria");
-        }
+        const valid = response.results?.filter((m) => m && m.id) || [];
+        const newList = newPage === 1 ? valid : [...movies, ...valid];
+        setMovies(removeDuplicates(newList));
+        setHasMore(response.results.length === 20);
+        pageRef.current = newPage;
       } catch (err) {
         console.error("Discover fetch error:", err);
-        setError("Failed to fetch movies. Please try again.");
+        setError("Failed to fetch movies.");
       } finally {
         setInitialLoading(false);
         setPaginationLoading(false);
       }
     },
-    [movies, removeDuplicates, getRandomCriteria]
+    [movies, filters]
+  );
+
+  const handleSearch = useCallback(
+    async (searchTerm, newPage = 1, isSearch = false) => {
+      if (isSearch || newPage === 1) setInitialLoading(true);
+      else setPaginationLoading(true);
+      if (isSearch) setLoadingSearch(true);
+      setError(null);
+
+      try {
+        const keyword = searchTerm.toLowerCase();
+        const response = await fetchMovies(keyword, newPage);
+        const valid = response.results.filter((m) => m && m.id);
+        const newList = newPage === 1 ? valid : [...movies, ...valid];
+        setMovies(removeDuplicates(newList));
+        setHasMore(response.results.length === 20);
+        pageRef.current = newPage;
+      } catch (err) {
+        console.error("Fetch error:", err);
+        setError("Failed to fetch movies.");
+      } finally {
+        setInitialLoading(false);
+        setPaginationLoading(false);
+        if (isSearch) setLoadingSearch(false);
+      }
+    },
+    [movies, removeDuplicates]
   );
 
   const debouncedSearch = useCallback(
     debounce((text) => {
-      setSelectedGenreId(null);
-      setSelectedYear(null);
+      setQuery(text);
       handleSearch(text, 1, true);
     }, 500),
     [handleSearch]
@@ -195,45 +143,23 @@ export const useMovies = () => {
   };
 
   const handleAddFavorite = async (movie) => {
-    try {
-      await toggleFavorite(movie);
-      const isFavorite = !favorites.some((fav) => fav.id === movie.id);
-      Toast.show(
-        `${movie.title} ${isFavorite ? "added to" : "removed from"} favorites`,
-        {
-          duration: Toast.durations.SHORT,
-          position: Toast.positions.BOTTOM,
-        }
-      );
-    } catch (error) {
-      console.error("Error toggling favorite:", error);
-      Toast.show("Failed to update favorites", {
-        duration: Toast.durations.SHORT,
-        position: Toast.positions.BOTTOM,
-      });
-    }
+    await toggleFavorite(movie);
+    const isFavorite = !favorites.some((fav) => fav.id === movie.id);
+    Toast.show(
+      `${movie.title} ${isFavorite ? "added to" : "removed from"} favorites`,
+      { duration: Toast.durations.SHORT, position: Toast.positions.BOTTOM }
+    );
   };
 
   const handleAddWatchLater = async (movie) => {
-    try {
-      await toggleWatchLater(movie);
-      const isWatchLater = !watchLater.some((w) => w.id === movie.id);
-      Toast.show(
-        `${movie.title} ${
-          isWatchLater ? "added to" : "removed from"
-        } Watch Later`,
-        {
-          duration: Toast.durations.SHORT,
-          position: Toast.positions.BOTTOM,
-        }
-      );
-    } catch (error) {
-      console.error("Error toggling watch later:", error);
-      Toast.show("Failed to update watch later", {
-        duration: Toast.durations.SHORT,
-        position: Toast.positions.BOTTOM,
-      });
-    }
+    await toggleWatchLater(movie);
+    const isWatchLater = !watchLater.some((w) => w.id === movie.id);
+    Toast.show(
+      `${movie.title} ${
+        isWatchLater ? "added to" : "removed from"
+      } Watch Later`,
+      { duration: Toast.durations.SHORT, position: Toast.positions.BOTTOM }
+    );
   };
 
   const handleRefresh = async () => {
@@ -254,8 +180,9 @@ export const useMovies = () => {
     paginationLoading,
     loadingSearch,
     error,
-    selectedGenreId,
     refreshing,
+    filters,
+    setFilters,
     handleSearch,
     debouncedSearch,
     handleLoadMore,
@@ -263,7 +190,5 @@ export const useMovies = () => {
     handleAddWatchLater,
     handleRefresh,
     setQuery,
-    setSelectedGenreId,
-    setSelectedYear,
   };
 };

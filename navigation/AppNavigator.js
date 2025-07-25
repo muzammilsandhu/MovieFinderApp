@@ -3,7 +3,7 @@ import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { Ionicons } from "@expo/vector-icons";
 
-import HomeScreen from "../screens/HomeScreen";
+import ExploreScreen from "../screens/ExploreScreen";
 import FavoritesScreen from "../screens/FavoritesScreen";
 import WatchLaterScreen from "../screens/WatchLaterScreen";
 import MovieDetailsScreen from "../screens/MovieDetailsScreen";
@@ -13,9 +13,9 @@ const Stack = createNativeStackNavigator();
 
 const TAB_SCREENS = [
   {
-    name: "Home",
-    component: HomeScreen,
-    icon: "home",
+    name: "Explore",
+    component: ExploreScreen,
+    icon: "compass",
   },
   {
     name: "Favorites",

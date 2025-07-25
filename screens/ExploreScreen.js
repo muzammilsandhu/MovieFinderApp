@@ -2,10 +2,11 @@ import React from "react";
 import { View, ActivityIndicator } from "react-native";
 import MovieSearchBar from "../components/MovieSearchBar";
 import MovieList from "../components/MovieList";
-import GenreFilter from "../components/GenreFilter";
+
 import { useMovies } from "../hooks/useMovies";
 import styles from "../styles/globalStyles";
 import { useMovieContext } from "../context/MovieContext";
+import FilterBar from "../components/FilterBar";
 
 export default function HomeScreen() {
   const {
@@ -16,8 +17,9 @@ export default function HomeScreen() {
     paginationLoading,
     loadingSearch,
     error,
-    selectedGenreId,
     refreshing,
+    filters,
+    setFilters,
     handleSearch,
     debouncedSearch,
     handleLoadMore,
@@ -25,14 +27,15 @@ export default function HomeScreen() {
     handleAddWatchLater,
     handleRefresh,
     setQuery,
-    setSelectedGenreId,
   } = useMovies();
+
   const { favorites, watchLater } = useMovieContext();
 
-  const filteredMovies =
-    selectedGenreId === null
-      ? movies
-      : movies.filter((movie) => movie.genre_ids?.includes(selectedGenreId));
+  const currentYear = new Date().getFullYear();
+  const availableYears = Array.from(
+    { length: currentYear - 1899 },
+    (_, i) => currentYear - i
+  );
 
   return (
     <View style={styles.homeContainer}>
@@ -42,10 +45,12 @@ export default function HomeScreen() {
         onSearch={debouncedSearch}
         loading={loadingSearch}
       />
-      <GenreFilter
-        selectedGenreId={selectedGenreId}
-        setSelectedGenreId={setSelectedGenreId}
+      <FilterBar
         genres={genres}
+        filters={filters}
+        setFilters={setFilters}
+        availableYears={availableYears}
+        setQuery={setQuery}
       />
       {initialLoading ? (
         <View style={styles.spinnerContainer}>
@@ -57,7 +62,7 @@ export default function HomeScreen() {
         </View>
       ) : (
         <MovieList
-          movies={filteredMovies}
+          movies={movies}
           favorites={favorites}
           watchLater={watchLater}
           error={error}
