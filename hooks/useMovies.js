@@ -23,16 +23,36 @@ export const useMovies = () => {
   const [selectedGenreId, setSelectedGenreId] = useState(null);
   const [selectedYear, setSelectedYear] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
+  const [filters, setFilters] = useState({
+    genreId: null,
+    year: null,
+    sortBy: "popularity.desc",
+  });
   const { favorites, watchLater, toggleFavorite, toggleWatchLater } =
     useMovieContext();
 
   const getRandomCriteria = useCallback(() => {
-    const years = [2025, 2024, 2023, 2022, 2020];
-    const year = years[Math.floor(Math.random() * years.length)];
-    const genre = genres[Math.floor(Math.random() * genres.length)] || {
-      id: null,
-    };
-    return { genreId: genre.id, year };
+    const validGenres = genres.filter((g) => g && g.id);
+
+    const currentYear = new Date().getFullYear();
+    const years = Array.from(
+      { length: currentYear - 1970 + 1 },
+      (_, i) => 1970 + i
+    );
+
+    const useGenre = validGenres.length > 0 && Math.random() > 0.4;
+    const useYear = Math.random() > 0.2;
+
+    const genreId = useGenre
+      ? validGenres[Math.floor(Math.random() * validGenres.length)].id
+      : null;
+
+    const year = useYear
+      ? years[Math.floor(Math.random() * years.length)]
+      : null;
+
+    console.log(`🎲 getRandomCriteria → genreId=${genreId}, year=${year}`);
+    return { genreId, year };
   }, [genres]);
 
   const removeDuplicates = useCallback((movieArray) => {
@@ -52,19 +72,14 @@ export const useMovies = () => {
       try {
         let genreList = await loadFromStorage("genres");
         if (!genreList || genreList.length === 0) {
-          console.log("Fetching genres from API");
           genreList = await fetchGenres();
           await saveToStorage("genres", genreList);
         }
         setGenres(genreList || []);
-        const { genreId, year } = getRandomCriteria();
-        setSelectedGenreId(genreId);
-        setSelectedYear(year);
-        await handleDiscover(genreId, year, 1, false);
+        await handleDiscover(1);
       } catch (error) {
         console.error("Error loading initial data:", error);
-        setError("Failed to load initial data. Using fallback.");
-        await handleDiscover(null, null, 1, false);
+        setError("Failed to load initial data.");
       } finally {
         setInitialLoading(false);
       }
@@ -124,10 +139,12 @@ export const useMovies = () => {
   );
 
   const handleDiscover = useCallback(
-    async (genreId, year, newPage = 1, isRefresh = false) => {
+    async (newPage = 1, isRefresh = false) => {
+      const { genreId, year } = getRandomCriteria();
       console.log(
         `handleDiscover: genreId=${genreId}, year=${year}, page=${newPage}, isRefresh=${isRefresh}`
       );
+
       if (newPage === 1) setInitialLoading(true);
       else setPaginationLoading(true);
       setError(null);
@@ -138,28 +155,17 @@ export const useMovies = () => {
           year,
           page: newPage,
         });
-        console.log("Discover Response:", response);
 
         if (response.results && response.results.length > 0) {
           const valid = response.results.filter((m) => m && m.id);
-          if (valid.length === 0 && newPage === 1) {
-            setError("No valid movies found for this query");
-          }
           const newList = newPage === 1 ? valid : [...movies, ...valid];
           setMovies(removeDuplicates(newList));
           setHasMore(response.results.length === 20);
           pageRef.current = newPage;
-
-          console.log(
-            `handleDiscover: fetched ${valid.length} movies, hasMore=${
-              response.results.length === 20
-            }`
-          );
         } else {
           if (newPage === 1) setMovies([]);
           setHasMore(false);
           setError("No movies found for this criteria");
-          console.log("handleDiscover: no results");
         }
       } catch (err) {
         console.error("Discover fetch error:", err);
@@ -169,7 +175,7 @@ export const useMovies = () => {
         setPaginationLoading(false);
       }
     },
-    [movies, removeDuplicates]
+    [movies, removeDuplicates, getRandomCriteria]
   );
 
   const debouncedSearch = useCallback(
@@ -184,12 +190,7 @@ export const useMovies = () => {
   const handleLoadMore = () => {
     if (!paginationLoading && hasMore) {
       const nextPage = pageRef.current + 1;
-      console.log(`handleLoadMore: loading page ${nextPage}`);
-      if (query) {
-        handleSearch(query, nextPage);
-      } else {
-        handleDiscover(selectedGenreId, selectedYear, nextPage);
-      }
+      handleDiscover(nextPage);
     }
   };
 
@@ -236,19 +237,11 @@ export const useMovies = () => {
   };
 
   const handleRefresh = async () => {
-    console.log("handleRefresh: starting refresh");
     setRefreshing(true);
     pageRef.current = 1;
     setMovies([]);
-    setQuery("");
-    const { genreId, year } = getRandomCriteria();
-    setSelectedGenreId(genreId);
-    setSelectedYear(year);
-    await handleDiscover(genreId, year, 1, true);
+    await handleDiscover(1);
     setRefreshing(false);
-    console.log(
-      `handleRefresh: completed with genreId=${genreId}, year=${year}`
-    );
   };
 
   return {

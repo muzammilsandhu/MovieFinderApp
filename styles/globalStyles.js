@@ -177,4 +177,24 @@ export default StyleSheet.create({
     fontSize: 18,
     fontWeight: "bold",
   },
+
+  //Filter Bar
+  FilterBarContainer: {
+    paddingVertical: 8,
+    paddingHorizontal: 10,
+  },
+  filterChip: {
+    backgroundColor: "#333",
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 20,
+    marginRight: 8,
+  },
+  filterChipSelected: {
+    backgroundColor: "#cc0000",
+  },
+  filterChipText: {
+    color: "#fff",
+    fontSize: 14,
+  },
 });
