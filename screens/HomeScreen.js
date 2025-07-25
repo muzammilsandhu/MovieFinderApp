@@ -1,3 +1,4 @@
+import React from "react";
 import { View, ActivityIndicator } from "react-native";
 import MovieSearchBar from "../components/MovieSearchBar";
 import MovieList from "../components/MovieList";
@@ -9,16 +10,14 @@ import { useMovieContext } from "../context/MovieContext";
 export default function HomeScreen() {
   const {
     movies,
-    favorites,
-    watchLater,
+    genres,
     query,
     initialLoading,
     paginationLoading,
     loadingSearch,
     error,
-    selectedGenre,
+    selectedGenreId,
     refreshing,
-    randomQuery,
     handleSearch,
     debouncedSearch,
     handleLoadMore,
@@ -26,11 +25,14 @@ export default function HomeScreen() {
     handleAddWatchLater,
     handleRefresh,
     setQuery,
-    setSelectedGenre,
-    setRandomQuery,
+    setSelectedGenreId,
   } = useMovies();
+  const { favorites, watchLater } = useMovieContext();
 
-  const filteredMovies = selectedGenre === "All" ? movies : movies;
+  const filteredMovies =
+    selectedGenreId === null
+      ? movies
+      : movies.filter((movie) => movie.genre_ids?.includes(selectedGenreId));
 
   return (
     <View style={styles.homeContainer}>
@@ -41,10 +43,9 @@ export default function HomeScreen() {
         loading={loadingSearch}
       />
       <GenreFilter
-        selectedGenre={selectedGenre}
-        setSelectedGenre={setSelectedGenre}
-        setRandomQuery={setRandomQuery}
-        handleSearch={handleSearch}
+        selectedGenreId={selectedGenreId}
+        setSelectedGenreId={setSelectedGenreId}
+        genres={genres}
       />
       {initialLoading ? (
         <View style={styles.spinnerContainer}>

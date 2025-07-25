@@ -33,3 +33,41 @@ export const fetchMovieDetails = async (movieId) => {
     throw error;
   }
 };
+
+export const fetchGenres = async () => {
+  try {
+    const response = await axios.get(`${BASE_URL}/genre/movie/list`, {
+      params: {
+        api_key: API_KEY,
+      },
+    });
+    return response.data.genres;
+  } catch (error) {
+    console.error("Error fetching genres:", error);
+    throw error;
+  }
+};
+
+export const fetchDiscoverMovies = async ({
+  page = 1,
+  genreId = null,
+  year = null,
+  sortBy = "popularity.desc",
+}) => {
+  try {
+    const params = {
+      api_key: API_KEY,
+      page,
+      sort_by: sortBy,
+    };
+    if (genreId) params.with_genres = genreId;
+    if (year) params.primary_release_year = year;
+    const response = await axios.get(`${BASE_URL}/discover/movie`, {
+      params,
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching discover movies:", error);
+    throw error;
+  }
+};

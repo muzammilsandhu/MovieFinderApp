@@ -1,23 +1,9 @@
 import { ScrollView, TouchableOpacity, Text } from "react-native";
 
-const GENRES = [
-  "All",
-  "Action",
-  "Comedy",
-  "Romance",
-  "Thriller",
-  "Crime",
-  "Sci-Fi",
-  "Horror",
-  "Drama",
-  "Fantasy",
-];
-
 export default function GenreFilter({
-  selectedGenre,
-  setSelectedGenre,
-  setRandomQuery,
-  handleSearch,
+  selectedGenreId,
+  setSelectedGenreId,
+  genres,
 }) {
   return (
     <ScrollView
@@ -25,16 +11,31 @@ export default function GenreFilter({
       showsHorizontalScrollIndicator={false}
       style={{ marginBottom: 10, flexGrow: "unset", flexShrink: "unset" }}
     >
-      {GENRES.map((genre) => (
-        <TouchableOpacity
-          key={genre}
-          onPress={() => {
-            setSelectedGenre(genre);
-            setRandomQuery(genre.toLowerCase());
-            handleSearch(genre.toLowerCase(), 1, true);
-          }}
+      <TouchableOpacity
+        onPress={() => setSelectedGenreId(null)}
+        style={{
+          backgroundColor: selectedGenreId === null ? "#cc0000" : "#eee",
+          paddingVertical: 6,
+          paddingHorizontal: 12,
+          borderRadius: 8,
+          marginRight: 10,
+        }}
+      >
+        <Text
           style={{
-            backgroundColor: selectedGenre === genre ? "#cc0000" : "#eee",
+            color: selectedGenreId === null ? "#fff" : "#333",
+            fontWeight: "bold",
+          }}
+        >
+          All
+        </Text>
+      </TouchableOpacity>
+      {genres.map((genre) => (
+        <TouchableOpacity
+          key={genre.id}
+          onPress={() => setSelectedGenreId(genre.id)}
+          style={{
+            backgroundColor: selectedGenreId === genre.id ? "#cc0000" : "#eee",
             paddingVertical: 6,
             paddingHorizontal: 12,
             borderRadius: 8,
@@ -43,11 +44,11 @@ export default function GenreFilter({
         >
           <Text
             style={{
-              color: selectedGenre === genre ? "#fff" : "#333",
+              color: selectedGenreId === genre.id ? "#fff" : "#333",
               fontWeight: "bold",
             }}
           >
-            {genre}
+            {genre.name}
           </Text>
         </TouchableOpacity>
       ))}

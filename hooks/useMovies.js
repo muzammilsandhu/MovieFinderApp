@@ -2,41 +2,38 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { Keyboard } from "react-native";
 import Toast from "react-native-root-toast";
 import debounce from "lodash/debounce";
-import { fetchMovieDetails, fetchMovies } from "../services/movieApi";
-import { saveToStorage, loadFromStorage } from "../utils/storage";
+import {
+  fetchMovies,
+  fetchDiscoverMovies,
+  fetchGenres,
+} from "../services/movieApi";
 import { useMovieContext } from "../context/MovieContext";
-
-const RANDOM_KEYWORDS = [
-  "movie",
-  "film",
-  "cinema",
-  "classic",
-  "recent",
-  "blockbuster",
-  "independent",
-];
+import { loadFromStorage, saveToStorage } from "../utils/storage";
 
 export const useMovies = () => {
   const pageRef = useRef(1);
   const [movies, setMovies] = useState([]);
+  const [genres, setGenres] = useState([]);
   const [hasMore, setHasMore] = useState(true);
   const [query, setQuery] = useState("");
   const [initialLoading, setInitialLoading] = useState(false);
   const [paginationLoading, setPaginationLoading] = useState(false);
   const [loadingSearch, setLoadingSearch] = useState(false);
   const [error, setError] = useState(null);
-  const [selectedGenre, setSelectedGenre] = useState("All");
+  const [selectedGenreId, setSelectedGenreId] = useState(null);
+  const [selectedYear, setSelectedYear] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
-  const [randomQuery, setRandomQuery] = useState("");
   const { favorites, watchLater, toggleFavorite, toggleWatchLater } =
     useMovieContext();
 
-  const getRandomKeyword = useCallback(() => {
-    const randomIndex = Math.floor(Math.random() * RANDOM_KEYWORDS.length);
-    const keyword = RANDOM_KEYWORDS[randomIndex].toLowerCase();
-    console.log(`getRandomKeyword: selected ${keyword}`);
-    return keyword;
-  }, []);
+  const getRandomCriteria = useCallback(() => {
+    const years = [2025, 2024, 2023, 2022, 2020];
+    const year = years[Math.floor(Math.random() * years.length)];
+    const genre = genres[Math.floor(Math.random() * genres.length)] || {
+      id: null,
+    };
+    return { genreId: genre.id, year };
+  }, [genres]);
 
   const removeDuplicates = useCallback((movieArray) => {
     const seen = new Set();
@@ -50,12 +47,30 @@ export const useMovies = () => {
 
   useEffect(() => {
     const loadInitial = async () => {
-      const keyword = getRandomKeyword();
-      setRandomQuery(keyword);
-      handleSearch(keyword, 1, false);
+      setInitialLoading(true);
+      setError(null);
+      try {
+        let genreList = await loadFromStorage("genres");
+        if (!genreList || genreList.length === 0) {
+          console.log("Fetching genres from API");
+          genreList = await fetchGenres();
+          await saveToStorage("genres", genreList);
+        }
+        setGenres(genreList || []);
+        const { genreId, year } = getRandomCriteria();
+        setSelectedGenreId(genreId);
+        setSelectedYear(year);
+        await handleDiscover(genreId, year, 1, false);
+      } catch (error) {
+        console.error("Error loading initial data:", error);
+        setError("Failed to load initial data. Using fallback.");
+        await handleDiscover(null, null, 1, false);
+      } finally {
+        setInitialLoading(false);
+      }
     };
     loadInitial();
-  }, [getRandomKeyword]);
+  }, []);
 
   const handleSearch = useCallback(
     async (searchTerm, newPage = 1, isSearch = false) => {
@@ -108,18 +123,73 @@ export const useMovies = () => {
     [movies, removeDuplicates]
   );
 
+  const handleDiscover = useCallback(
+    async (genreId, year, newPage = 1, isRefresh = false) => {
+      console.log(
+        `handleDiscover: genreId=${genreId}, year=${year}, page=${newPage}, isRefresh=${isRefresh}`
+      );
+      if (newPage === 1) setInitialLoading(true);
+      else setPaginationLoading(true);
+      setError(null);
+
+      try {
+        const response = await fetchDiscoverMovies({
+          genreId,
+          year,
+          page: newPage,
+        });
+        console.log("Discover Response:", response);
+
+        if (response.results && response.results.length > 0) {
+          const valid = response.results.filter((m) => m && m.id);
+          if (valid.length === 0 && newPage === 1) {
+            setError("No valid movies found for this query");
+          }
+          const newList = newPage === 1 ? valid : [...movies, ...valid];
+          setMovies(removeDuplicates(newList));
+          setHasMore(response.results.length === 20);
+          pageRef.current = newPage;
+
+          console.log(
+            `handleDiscover: fetched ${valid.length} movies, hasMore=${
+              response.results.length === 20
+            }`
+          );
+        } else {
+          if (newPage === 1) setMovies([]);
+          setHasMore(false);
+          setError("No movies found for this criteria");
+          console.log("handleDiscover: no results");
+        }
+      } catch (err) {
+        console.error("Discover fetch error:", err);
+        setError("Failed to fetch movies. Please try again.");
+      } finally {
+        setInitialLoading(false);
+        setPaginationLoading(false);
+      }
+    },
+    [movies, removeDuplicates]
+  );
+
   const debouncedSearch = useCallback(
     debounce((text) => {
+      setSelectedGenreId(null);
+      setSelectedYear(null);
       handleSearch(text, 1, true);
     }, 500),
     [handleSearch]
   );
 
   const handleLoadMore = () => {
-    if (!paginationLoading && hasMore && randomQuery) {
+    if (!paginationLoading && hasMore) {
       const nextPage = pageRef.current + 1;
       console.log(`handleLoadMore: loading page ${nextPage}`);
-      handleSearch(randomQuery, nextPage);
+      if (query) {
+        handleSearch(query, nextPage);
+      } else {
+        handleDiscover(selectedGenreId, selectedYear, nextPage);
+      }
     }
   };
 
@@ -170,26 +240,29 @@ export const useMovies = () => {
     setRefreshing(true);
     pageRef.current = 1;
     setMovies([]);
-    const newKeyword = getRandomKeyword();
-    setRandomQuery(newKeyword);
-    setSelectedGenre("All");
-    await handleSearch(newKeyword, 1, true);
+    setQuery("");
+    const { genreId, year } = getRandomCriteria();
+    setSelectedGenreId(genreId);
+    setSelectedYear(year);
+    await handleDiscover(genreId, year, 1, true);
     setRefreshing(false);
-    console.log(`handleRefresh: completed with keyword=${newKeyword}`);
+    console.log(
+      `handleRefresh: completed with genreId=${genreId}, year=${year}`
+    );
   };
 
   return {
     movies,
     favorites,
     watchLater,
+    genres,
     query,
     initialLoading,
     paginationLoading,
     loadingSearch,
     error,
-    selectedGenre,
+    selectedGenreId,
     refreshing,
-    randomQuery,
     handleSearch,
     debouncedSearch,
     handleLoadMore,
@@ -197,7 +270,7 @@ export const useMovies = () => {
     handleAddWatchLater,
     handleRefresh,
     setQuery,
-    setSelectedGenre,
-    setRandomQuery,
+    setSelectedGenreId,
+    setSelectedYear,
   };
 };
