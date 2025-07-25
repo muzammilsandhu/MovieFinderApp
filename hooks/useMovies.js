@@ -1,9 +1,10 @@
 import { useState, useEffect, useRef, useCallback } from "react";
+import { Keyboard } from "react-native";
+import Toast from "react-native-root-toast";
+import debounce from "lodash/debounce";
 import { fetchMovieDetails, fetchMovies } from "../services/movieApi";
 import { saveToStorage, loadFromStorage } from "../utils/storage";
-import debounce from "lodash/debounce";
-import Toast from "react-native-root-toast";
-import { Keyboard } from "react-native";
+import { useMovieContext } from "../context/MovieContext";
 
 const RANDOM_KEYWORDS = [
   "movie",
@@ -18,8 +19,6 @@ const RANDOM_KEYWORDS = [
 export const useMovies = () => {
   const pageRef = useRef(1);
   const [movies, setMovies] = useState([]);
-  const [favorites, setFavorites] = useState([]);
-  const [watchLater, setWatchLater] = useState([]);
   const [hasMore, setHasMore] = useState(true);
   const [query, setQuery] = useState("");
   const [initialLoading, setInitialLoading] = useState(false);
@@ -29,6 +28,8 @@ export const useMovies = () => {
   const [selectedGenre, setSelectedGenre] = useState("All");
   const [refreshing, setRefreshing] = useState(false);
   const [randomQuery, setRandomQuery] = useState("");
+  const { favorites, watchLater, toggleFavorite, toggleWatchLater } =
+    useMovieContext();
 
   const getRandomKeyword = useCallback(() => {
     const randomIndex = Math.floor(Math.random() * RANDOM_KEYWORDS.length);
@@ -49,10 +50,6 @@ export const useMovies = () => {
 
   useEffect(() => {
     const loadInitial = async () => {
-      const favs = await loadFromStorage("favorites");
-      const watch = await loadFromStorage("watchLater");
-      setFavorites(favs || []);
-      setWatchLater(watch || []);
       const keyword = getRandomKeyword();
       setRandomQuery(keyword);
       handleSearch(keyword, 1, false);
@@ -73,32 +70,10 @@ export const useMovies = () => {
       try {
         const keyword = searchTerm.toLowerCase();
         const response = await fetchMovies(keyword, newPage);
-        console.log("Raw Search Response:", response);
+        console.log("Search Response:", response);
 
         if (response.results && response.results.length > 0) {
-          const detailed = await Promise.all(
-            response.results.map(async (m) => {
-              try {
-                const details = await fetchMovieDetails(m.id);
-                console.log("Detailed Response for ID:", m.id, details);
-                return details && details.id
-                  ? {
-                      ...details,
-                      title: details.title || `Movie (${details.id})`,
-                    }
-                  : null;
-              } catch (detailError) {
-                console.error(
-                  "Error fetching details for ID:",
-                  m.id,
-                  detailError
-                );
-                return null;
-              }
-            })
-          );
-
-          const valid = detailed.filter((m) => m && m.id !== undefined);
+          const valid = response.results.filter((m) => m && m.id);
           if (valid.length === 0 && newPage === 1) {
             setError("No valid movies found for this query");
           }
@@ -149,49 +124,45 @@ export const useMovies = () => {
   };
 
   const handleAddFavorite = async (movie) => {
-    const exists = favorites.some((fav) => fav.id === movie.id);
-    let updated;
-    if (exists) {
-      updated = favorites.filter((fav) => fav.id !== movie.id);
-      Toast.show(`${movie.title} removed from favorites`, {
-        duration: Toast.durations.SHORT,
-        position: Toast.positions.BOTTOM,
-      });
-    } else {
-      const fullDetails = await fetchMovieDetails(movie.id);
-      if (!fullDetails) return;
-      updated = [...favorites, fullDetails];
-      Toast.show(`${fullDetails.title} added to favorites`, {
+    try {
+      await toggleFavorite(movie);
+      const isFavorite = !favorites.some((fav) => fav.id === movie.id);
+      Toast.show(
+        `${movie.title} ${isFavorite ? "added to" : "removed from"} favorites`,
+        {
+          duration: Toast.durations.SHORT,
+          position: Toast.positions.BOTTOM,
+        }
+      );
+    } catch (error) {
+      console.error("Error toggling favorite:", error);
+      Toast.show("Failed to update favorites", {
         duration: Toast.durations.SHORT,
         position: Toast.positions.BOTTOM,
       });
     }
-
-    setFavorites(updated);
-    await saveToStorage("favorites", updated);
   };
 
   const handleAddWatchLater = async (movie) => {
-    const exists = watchLater.some((w) => w.id === movie.id);
-    let updated;
-    if (exists) {
-      updated = watchLater.filter((w) => w.id !== movie.id);
-      Toast.show(`${movie.title} removed from Watch Later`, {
-        duration: Toast.durations.SHORT,
-        position: Toast.positions.BOTTOM,
-      });
-    } else {
-      const fullDetails = await fetchMovieDetails(movie.id);
-      if (!fullDetails) return;
-      updated = [...watchLater, fullDetails];
-      Toast.show(`${fullDetails.title} added to Watch Later`, {
+    try {
+      await toggleWatchLater(movie);
+      const isWatchLater = !watchLater.some((w) => w.id === movie.id);
+      Toast.show(
+        `${movie.title} ${
+          isWatchLater ? "added to" : "removed from"
+        } Watch Later`,
+        {
+          duration: Toast.durations.SHORT,
+          position: Toast.positions.BOTTOM,
+        }
+      );
+    } catch (error) {
+      console.error("Error toggling watch later:", error);
+      Toast.show("Failed to update watch later", {
         duration: Toast.durations.SHORT,
         position: Toast.positions.BOTTOM,
       });
     }
-
-    setWatchLater(updated);
-    await saveToStorage("watchLater", updated);
   };
 
   const handleRefresh = async () => {

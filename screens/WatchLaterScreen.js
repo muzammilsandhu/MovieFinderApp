@@ -1,28 +1,14 @@
-import { useFocusEffect } from "@react-navigation/native";
-import { useCallback, useState } from "react";
+import { useState } from "react";
 import { View } from "react-native";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import MovieList from "../components/MovieList";
 import ConfirmModal from "../components/ConfirmModal";
 import styles from "../styles/globalStyles";
+import { useMovieContext } from "../context/MovieContext";
 
 export default function WatchLaterScreen() {
-  const [watchLater, setWatchLater] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [selectedID, setSelectedID] = useState(null);
+  const { watchLater, toggleWatchLater, reloadLists } = useMovieContext();
   const [modalVisible, setModalVisible] = useState(false);
-
-  const loadWatchLater = async () => {
-    const stored = await AsyncStorage.getItem("watchLater");
-    setWatchLater(stored ? JSON.parse(stored) : []);
-    setLoading(false);
-  };
-
-  useFocusEffect(
-    useCallback(() => {
-      loadWatchLater();
-    }, [])
-  );
+  const [selectedID, setSelectedID] = useState(null);
 
   const confirmRemove = (id) => {
     setSelectedID(id);
@@ -30,36 +16,23 @@ export default function WatchLaterScreen() {
   };
 
   const handleRemove = async () => {
-    const updated = watchLater.filter((m) => m.id !== selectedID);
-    await AsyncStorage.setItem("watchLater", JSON.stringify(updated));
-    setWatchLater(updated);
+    if (!selectedID) return;
+    await toggleWatchLater({ id: selectedID });
     setModalVisible(false);
-  };
-
-  const toggleWatchLater = async (movie) => {
-    const exists = watchLater.find((m) => m.id === movie.id);
-    if (exists) {
-      const updated = watchLater.filter((m) => m.id !== movie.id);
-      setWatchLater(updated);
-      await AsyncStorage.setItem("watchLater", JSON.stringify(updated));
-    } else {
-      const updated = [...watchLater, movie];
-      setWatchLater(updated);
-      await AsyncStorage.setItem("watchLater", JSON.stringify(updated));
-    }
+    setSelectedID(null);
+    await reloadLists();
   };
 
   return (
     <View style={styles.moviesContainer}>
       <MovieList
         movies={watchLater}
-        loading={loading}
+        loading={false}
         error={watchLater.length === 0 ? "No movies in watch later list." : ""}
         onEndReached={() => {}}
         onFavorite={() => {}}
         onWatchLater={toggleWatchLater}
         onRemove={confirmRemove}
-        watchLater={watchLater}
       />
       <ConfirmModal
         visible={modalVisible}

@@ -1,7 +1,8 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { RootSiblingParent } from "react-native-root-siblings";
 import AppNavigator from "./navigation/AppNavigator";
 import * as SplashScreen from "expo-splash-screen";
+import { MovieProvider } from "./context/MovieContext";
 
 SplashScreen.preventAutoHideAsync();
 
@@ -34,7 +35,9 @@ export default function App() {
 
   return (
     <RootSiblingParent>
-      <AppNavigator />
+      <MovieProvider>
+        <AppNavigator />
+      </MovieProvider>
     </RootSiblingParent>
   );
 }

@@ -1,10 +1,10 @@
-import React from "react";
 import { View, ActivityIndicator } from "react-native";
 import MovieSearchBar from "../components/MovieSearchBar";
 import MovieList from "../components/MovieList";
 import GenreFilter from "../components/GenreFilter";
 import { useMovies } from "../hooks/useMovies";
 import styles from "../styles/globalStyles";
+import { useMovieContext } from "../context/MovieContext";
 
 export default function HomeScreen() {
   const {
@@ -30,14 +30,7 @@ export default function HomeScreen() {
     setRandomQuery,
   } = useMovies();
 
-  const filteredMovies =
-    selectedGenre === "All"
-      ? movies
-      : movies.filter((m) =>
-          (m.genres?.map((g) => g.name).join(", ") || "")
-            .toLowerCase()
-            .includes(selectedGenre.toLowerCase())
-        );
+  const filteredMovies = selectedGenre === "All" ? movies : movies;
 
   return (
     <View style={styles.homeContainer}>

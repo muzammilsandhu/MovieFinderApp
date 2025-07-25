@@ -1,28 +1,14 @@
-import { useFocusEffect } from "@react-navigation/native";
-import { useCallback, useState } from "react";
+import { useState } from "react";
 import { View } from "react-native";
 import MovieList from "../components/MovieList";
-import { loadFromStorage, saveToStorage } from "../utils/storage";
 import ConfirmModal from "../components/ConfirmModal";
 import styles from "../styles/globalStyles";
+import { useMovieContext } from "../context/MovieContext";
 
 export default function FavoritesScreen() {
-  const [favorites, setFavorites] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [selectedID, setSelectedID] = useState(null);
+  const { favorites, toggleFavorite, reloadLists } = useMovieContext();
   const [modalVisible, setModalVisible] = useState(false);
-
-  const loadFavorites = async () => {
-    const stored = await loadFromStorage("favorites");
-    setFavorites(stored || []);
-    setLoading(false);
-  };
-
-  useFocusEffect(
-    useCallback(() => {
-      loadFavorites();
-    }, [])
-  );
+  const [selectedID, setSelectedID] = useState(null);
 
   const confirmRemove = (id) => {
     setSelectedID(id);
@@ -30,38 +16,24 @@ export default function FavoritesScreen() {
   };
 
   const handleRemove = async () => {
-    const updated = favorites.filter((m) => m.id !== selectedID);
-    await saveToStorage("favorites", updated);
-    setFavorites(updated);
+    if (!selectedID) return;
+    await toggleFavorite({ id: selectedID });
     setModalVisible(false);
-  };
-
-  const toggleFavorite = async (movie) => {
-    const exists = favorites.find((m) => m.id === movie.id);
-    if (exists) {
-      const updated = favorites.filter((m) => m.id !== movie.id);
-      setFavorites(updated);
-      await saveToStorage("favorites", updated);
-    } else {
-      const updated = [...favorites, movie];
-      setFavorites(updated);
-      await saveToStorage("favorites", updated);
-    }
+    setSelectedID(null);
+    await reloadLists();
   };
 
   return (
     <View style={styles.moviesContainer}>
       <MovieList
         movies={favorites}
-        loading={loading}
+        loading={false}
         error={favorites.length === 0 ? "No favorites yet." : ""}
         onEndReached={() => {}}
         onFavorite={toggleFavorite}
         onWatchLater={() => {}}
         onRemove={confirmRemove}
-        favorites={favorites}
       />
-
       <ConfirmModal
         visible={modalVisible}
         title="Remove Movie"
